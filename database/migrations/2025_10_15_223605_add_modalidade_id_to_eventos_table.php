@@ -1,0 +1,29 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('eventos', function (Blueprint $table) {
+            $table->foreignId('modalidade_id')->nullable()->after('nome')->constrained('modalidades')->onDelete('set null');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('eventos', function (Blueprint $table) {
+            $table->dropForeign(['modalidade_id']);
+            $table->dropColumn('modalidade_id');
+        });
+    }
+};

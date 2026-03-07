@@ -1,0 +1,25 @@
+php artisan db:limpar-testes
+
+**Opção 2: Limpar Eventos também (Mantendo só Users e Atletas)**
+Isso apaga inscrições, mas também apaga os Eventos e Organizações. Você terá que criar a organização e o evento de novo.
+```bash
+php artisan db:limpar-testes --tudo
+
+---
+
+### Solução Rápida (Via Tinker)
+Se você não quiser criar o arquivo e quiser apenas rodar um comando agora mesmo no terminal para limpar **apenas as inscrições** para testar o avatar:
+
+1. Rode `php artisan tinker`
+2. Cole o código abaixo:
+
+```php
+DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+DB::table('inscricao_produto')->truncate();
+DB::table('resultados')->truncate();
+DB::table('pagamentos')->truncate();
+DB::table('inscricoes')->truncate();
+DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+exit;
+
+Isso vai zerar as inscrições e permitir que você faça todo o processo novamente com o mesmo usuário.

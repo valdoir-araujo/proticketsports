@@ -1,0 +1,44 @@
+Criar campo na tabela Produtos adicionais
+php artisan make:migration add_quantidade_gratuidade_to_produtos_opcionais_table --table=produtos_opcionais
+
+php artisan make:migration add_codigo_dupla_to_inscricoes_table --table=inscricoes
+
+admin@proticketsports.com.br
+@VsAdmin142536
+
+noreply@proticketsports.com.br
+@ProSports02
+
+!@#Vsa#@!251436
+
+ssh -p 65002 u769958563@93.127.189.99
+senha !@#Vsa#@!251436
+
+cd /home/u769958563/domains/proticketsports.com.br/public_html
+
+$ tail -n 100 storage/logs/laravel.log
+tail -n 100 storage/logs/laravel.log
+
+
+//---
+
+Criar tabela permissao
+php artisan make:migration create_permissions_tables
+
+//--
+Criar tipo de usario 
+php artisan make:migration update_role_column_in_users_table --table=users
+
+//--
+Criar tabela de vinculos de usuario e equipes 
+php artisan make:migration create_equipe_user_table
+
+//--
+Criar melhoria na tabela para o avatar.
+
+php artisan make:migration add_avatar_template_url_to_eventos_table --table=eventos
+
+
+Gerar tabela d epedidos
+
+php artisan make:migration create_pedidos_loja_table

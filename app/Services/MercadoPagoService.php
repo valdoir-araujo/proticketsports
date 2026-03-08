@@ -151,36 +151,48 @@ class MercadoPagoService implements PaymentGatewayInterface
     }
 
     /**
-     * Processa os dados de pagamento recebidos do Brick.
+     * Processa os dados de pagamento recebidos do Brick (cartão).
+     * Estrutura alinhada à loja: payment_method_id, token, installments, issuer_id (opcional), payer.
      */
     public function processPayment(array $data, Inscricao $inscricao): array
     {
         $this->ensureToken();
         try {
-            $payerDocument = preg_replace('/[^0-9]/', '', $data['payer']['identification']['number'] ?? '');
             $client = new PaymentClient();
+            $paymentMethodId = $data['payment_method_id'] ?? $data['paymentMethodId'] ?? null;
+            $token = $data['token'] ?? null;
+            $installments = max(1, (int) ($data['installments'] ?? 1));
+            $issuerId = $data['issuer_id'] ?? $data['issuerId'] ?? null;
 
-            // 1. Montagem dos dados base (valor SEMPRE do servidor - nunca do cliente)
-            $payment_request = [
-                "transaction_amount" => (float) $inscricao->valor_pago,
-                "token" => $data['token'],
-                "description" => "Inscrição #{$inscricao->id} - ProTicket",
-                "installments" => (int) $data['installments'],
-                "payment_method_id" => $data['payment_method_id'],
-                "issuer_id" => (int) $data['issuer_id'],
-                "external_reference" => (string) $inscricao->id,
-                "payer" => [
-                    "email" => $data['payer']['email'],
-                    "identification" => [
-                        "type" => $data['payer']['identification']['type'],
-                        "number" => $payerDocument
-                    ]
-                ],
-                // 🛡️ ADICIONADO: Informações adicionais para antifraude
-                "additional_info" => [
-                    "ip_address" => $data['payer_ip'] ?? request()->ip()
-                ]
+            $payerDoc = '';
+            if (!empty($data['payer']['identification']['number'])) {
+                $payerDoc = preg_replace('/[^0-9]/', '', (string) $data['payer']['identification']['number']);
+            }
+            if ($payerDoc === '' && $inscricao->atleta && $inscricao->atleta->cpf) {
+                $payerDoc = preg_replace('/[^0-9]/', '', (string) $inscricao->atleta->cpf);
+            }
+            $payerType = $data['payer']['identification']['type'] ?? 'CPF';
+
+            $payer = [
+                'email' => $data['payer']['email'] ?? $inscricao->atleta->user->email ?? '',
             ];
+            if ($payerDoc !== '') {
+                $payer['identification'] = ['type' => $payerType, 'number' => $payerDoc];
+            }
+
+            $payment_request = [
+                'transaction_amount' => (float) number_format($inscricao->valor_pago, 2, '.', ''),
+                'token' => $token,
+                'description' => 'Inscrição #' . $inscricao->id . ' - ProTicket',
+                'installments' => $installments,
+                'payment_method_id' => $paymentMethodId,
+                'external_reference' => (string) $inscricao->id,
+                'payer' => $payer,
+                'additional_info' => ['ip_address' => $data['payer_ip'] ?? request()->ip()],
+            ];
+            if ($issuerId !== null && $issuerId !== '') {
+                $payment_request['issuer_id'] = (int) $issuerId;
+            }
 
             $headers = ['X-Idempotency-Key: inscricao_card_' . $inscricao->id . '_' . uniqid('', true)];
             if (!empty($data['device_id'])) {
@@ -207,11 +219,20 @@ class MercadoPagoService implements PaymentGatewayInterface
 
         } catch (MPApiException $e) {
             $content = $e->getApiResponse()->getContent();
-            Log::error("Erro MP API: " . json_encode($content));
-            return ['status' => 'error', 'message' => 'Erro MP: ' . ($content['message'] ?? 'Cartão recusado.')];
+            Log::error('Erro MP API Inscrição cartão: ' . json_encode($content));
+            $msg = $content['message'] ?? 'Cartão recusado.';
+            if (!empty($content['cause']) && is_array($content['cause'])) {
+                $first = reset($content['cause']);
+                if (is_array($first) && isset($first['description'])) {
+                    $msg = $first['description'];
+                } elseif (is_string($first)) {
+                    $msg = $first;
+                }
+            }
+            return ['status' => 'error', 'message' => $msg];
         } catch (\Exception $e) {
-            Log::error("Erro Interno Service: " . $e->getMessage());
-            return ['status' => 'error', 'message' => 'Erro interno ao processar.'];
+            Log::error('Erro processPayment Inscrição: ' . $e->getMessage());
+            return ['status' => 'error', 'message' => $e->getMessage() ?: 'Erro ao processar. Tente PIX ou contate o suporte.'];
         }
     }
 

@@ -142,7 +142,15 @@ class PagamentoController extends Controller
             }
         }
 
-        // 3. Cartão: processamento via Brick
+        // 3. Cartão: processamento via Brick (validar como na loja)
+        $token = $request->input('token');
+        if (empty($token)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Dados do cartão incompletos. Preencha e tente novamente.',
+            ], 400);
+        }
+
         try {
             $resultado = $paymentGateway->processPayment($request->all(), $inscricao);
 
@@ -199,13 +207,9 @@ class PagamentoController extends Controller
             ], 400);
 
         } catch (\Exception $e) {
-            // Erro Fatal (Código quebrado, API fora do ar, etc)
-            Log::error("Erro Fatal no Pagamento: " . $e->getMessage() . " - Linha: " . $e->getLine());
-            
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Ocorreu um erro interno ao processar. Por favor, contate o suporte ou tente outra forma de pagamento.'
-            ], 500);
+            Log::error('Erro Fatal Pagamento Inscrição: ' . $e->getMessage() . ' - Linha: ' . $e->getLine());
+            $message = $e->getMessage() ?: 'Erro ao processar. Tente PIX ou contate o suporte.';
+            return response()->json(['status' => 'error', 'message' => $message], 400);
         }
     }
 

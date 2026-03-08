@@ -258,10 +258,18 @@
                         if (root && root.__x) root.__x.$data.loading = false;
                         if (data.redirect_url) { window.location.href = data.redirect_url; return; }
                         if (data.payment_id) { window.location.href = successUrlInscricao; return; }
+                        var msg = data.message || 'Pagamento não aprovado.';
+                        if (root && root.__x) root.__x.$data.errorMessage = msg;
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        throw new Error(msg);
                     })
                     .catch(function(err) {
-                        if (root && root.__x) root.__x.$data.loading = false;
-                        if (root && root.__x) root.__x.$data.errorMessage = err.message || 'Erro ao processar.';
+                        if (root && root.__x) {
+                            root.__x.$data.loading = false;
+                            root.__x.$data.errorMessage = err.message || 'Erro ao processar. Tente PIX ou contate o suporte.';
+                        }
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        throw err;
                     });
                 },
                 onError: function() { if (loadingEl) loadingEl.style.display = 'none'; }

@@ -324,7 +324,7 @@ class LojaCheckoutController extends Controller
             'pedido_id' => 'required'
         ]);
 
-        $pedido = PedidoLoja::findOrFail($request->pedido_id);
+        $pedido = PedidoLoja::with('itens.produto')->findOrFail($request->pedido_id);
 
         // 2. Autorização: apenas o dono do pedido pode processar pagamento (sessão ou auth)
         $user = $this->getCheckoutUser();
@@ -375,13 +375,49 @@ class LojaCheckoutController extends Controller
                 }
             }
 
-            // 3. Monta Requisição
+            // 3. Items para additional_info (qualidade da integração: category_id, description, id, quantity, title, unit_price)
+            $itemsLoja = [];
+            foreach ($pedido->itens as $item) {
+                $produto = $item->produto;
+                $nome = $produto ? $produto->nome : 'Item';
+                $desc = $produto ? ($produto->descricao ?? $produto->nome) : 'Produto loja';
+                $itemsLoja[] = [
+                    'id' => 'ped-' . $pedido->id . '-item-' . $item->id,
+                    'title' => substr($nome, 0, 200),
+                    'description' => substr($desc, 0, 200),
+                    'category_id' => 'others',
+                    'quantity' => (int) $item->quantidade,
+                    'unit_price' => (float) $item->valor_unitario,
+                ];
+            }
+            if (empty($itemsLoja)) {
+                $itemsLoja[] = [
+                    'id' => 'ped-' . $pedido->id,
+                    'title' => 'Pedido #' . $pedido->id,
+                    'description' => 'Pedido Loja #' . $pedido->id,
+                    'category_id' => 'others',
+                    'quantity' => 1,
+                    'unit_price' => (float) $pedido->valor_total,
+                ];
+            }
+
+            $notificationUrl = URL::route('webhook.mercadopago', [], true);
+            if (app()->environment('production') && str_starts_with($notificationUrl, 'http://')) {
+                $notificationUrl = 'https://' . substr($notificationUrl, 7);
+            }
+
+            // 4. Monta Requisição
             $paymentRequest = [
                 "transaction_amount" => (float) $pedido->valor_total,
                 "description" => "Pedido Loja #" . $pedido->id,
                 "payment_method_id" => $paymentMethodId,
                 "payer" => $payerData,
-                "metadata" => ["pedido_loja_id" => $pedido->id]
+                "metadata" => ["pedido_loja_id" => $pedido->id],
+                "notification_url" => $notificationUrl,
+                "statement_descriptor" => "PROTICKET",
+                "additional_info" => [
+                    "items" => $itemsLoja,
+                ],
             ];
 
             // Adiciona dados específicos de Cartão (Token, installments, issuer_id)
@@ -395,12 +431,17 @@ class LojaCheckoutController extends Controller
                 }
             }
 
-            // Header de idempotência (obrigatório pelo Mercado Pago para pagamentos com cartão)
+            // Header de idempotência e Device ID (qualidade da integração)
             $idempotencyKey = 'loja_pedido_' . $pedido->id . '_' . uniqid('', true);
             $requestOptions = new RequestOptions();
-            $requestOptions->setCustomHeaders(['X-Idempotency-Key: ' . $idempotencyKey]);
+            $headers = ['X-Idempotency-Key: ' . $idempotencyKey];
+            $deviceId = $request->input('device_id');
+            if (!empty($deviceId)) {
+                $headers[] = 'X-Meli-Session-Id: ' . $deviceId;
+            }
+            $requestOptions->setCustomHeaders($headers);
 
-            // 4. Cria o Pagamento na API
+            // 5. Cria o Pagamento na API
             $payment = $client->create($paymentRequest, $requestOptions);
 
             // 5. Analisa a Resposta

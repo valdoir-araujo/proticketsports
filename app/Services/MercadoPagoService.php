@@ -6,6 +6,7 @@ use App\Interfaces\PaymentGatewayInterface;
 use App\Models\Inscricao;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use MercadoPago\Client\Payment\PaymentClient;
 use MercadoPago\Client\Preference\PreferenceClient;
 use MercadoPago\Exceptions\MPApiException;
@@ -44,6 +45,38 @@ class MercadoPagoService implements PaymentGatewayInterface
             Log::critical('Tentativa de uso do Mercado Pago sem token configurado.');
             throw new \Exception('Pagamento não está configurado. Entre em contato com o organizador do evento.');
         }
+    }
+
+    /**
+     * URL absoluta do webhook para o Mercado Pago (obrigatório para qualidade da integração).
+     * Em produção deve ser HTTPS.
+     */
+    private function getWebhookUrl(): string
+    {
+        $url = URL::route('webhook.mercadopago', [], true);
+        if (app()->environment('production') && str_starts_with($url, 'http://')) {
+            $url = 'https://' . substr($url, 7);
+        }
+        return $url;
+    }
+
+    /**
+     * Monta o array items para additional_info (melhora aprovação e qualidade da integração).
+     */
+    private function buildItemsInscricao(Inscricao $inscricao): array
+    {
+        $valor = (float) number_format($inscricao->valor_pago, 2, '.', '');
+        $titulo = 'Inscrição: ' . substr($inscricao->evento->nome ?? 'Evento', 0, 200);
+        return [
+            [
+                'id' => 'insc-' . $inscricao->id,
+                'title' => $titulo,
+                'description' => 'Inscrição #' . $inscricao->id . ' - ' . substr($inscricao->evento->nome ?? 'Evento', 0, 200),
+                'category_id' => 'events',
+                'quantity' => 1,
+                'unit_price' => $valor,
+            ],
+        ];
     }
 
     /**
@@ -119,6 +152,12 @@ class MercadoPagoService implements PaymentGatewayInterface
                 'payment_method_id' => 'pix',
                 'payer' => $payerData,
                 'external_reference' => (string) $inscricao->id,
+                'notification_url' => $this->getWebhookUrl(),
+                'statement_descriptor' => 'PROTICKET',
+                'additional_info' => [
+                    'ip_address' => request()->ip(),
+                    'items' => $this->buildItemsInscricao($inscricao),
+                ],
             ];
             $requestOptions = new RequestOptions();
             $requestOptions->setCustomHeaders(['X-Idempotency-Key: inscricao_pix_' . $inscricao->id . '_' . uniqid('', true)]);
@@ -196,7 +235,12 @@ class MercadoPagoService implements PaymentGatewayInterface
                 'payment_method_id' => $paymentMethodId,
                 'external_reference' => (string) $inscricao->id,
                 'payer' => $payer,
-                'additional_info' => ['ip_address' => $data['payer_ip'] ?? request()->ip()],
+                'notification_url' => $this->getWebhookUrl(),
+                'statement_descriptor' => 'PROTICKET',
+                'additional_info' => [
+                    'ip_address' => $data['payer_ip'] ?? request()->ip(),
+                    'items' => $this->buildItemsInscricao($inscricao),
+                ],
             ];
             if ($issuerId !== null && $issuerId !== '' && $issuerId !== 0) {
                 $payment_request['issuer_id'] = (int) $issuerId;

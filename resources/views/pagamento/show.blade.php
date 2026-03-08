@@ -153,6 +153,8 @@
 @endsection
 
 @push('scripts')
+{{-- Device ID para qualidade da integração Mercado Pago (identificador do dispositivo) --}}
+<script src="https://www.mercadopago.com/v2/security.js" view="checkout"></script>
 <script src="https://sdk.mercadopago.com/js/v2"></script>
 <script>
 (function() {
@@ -178,7 +180,7 @@
                 var self = this;
                 this.loading = true;
                 this.errorMessage = '';
-                var payload = { payment_method_id: 'pix', payer: { email: emailInscricao } };
+                var payload = { payment_method_id: 'pix', payer: { email: emailInscricao }, device_id: (typeof MP_DEVICE_SESSION_ID !== 'undefined' ? MP_DEVICE_SESSION_ID : '') };
                 fetch(processUrlInscricao, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfInscricao, 'Accept': 'application/json' },
@@ -246,9 +248,10 @@
             callbacks: {
                 onReady: function() { if (loadingEl) loadingEl.style.display = 'none'; },
                 onSubmit: function(formData) {
-                    var payload = formData;
+                    var payload = Object.assign({}, formData);
                     if (payload.paymentMethodId && !payload.payment_method_id) payload.payment_method_id = payload.paymentMethodId;
                     if (payload.issuerId !== undefined && payload.issuer_id === undefined) payload.issuer_id = payload.issuerId;
+                    if (typeof MP_DEVICE_SESSION_ID !== 'undefined') payload.device_id = MP_DEVICE_SESSION_ID;
                     var root = document.querySelector('[x-data]');
                     if (root && root.__x) root.__x.$data.loading = true;
                     return fetch(processUrlInscricao, {

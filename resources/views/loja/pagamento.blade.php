@@ -197,7 +197,8 @@
 @endsection
 
 @push('scripts')
-{{-- Loja: Pagamento PIX + Cartão (Mercado Pago). Cartão carrega apenas em HTTPS; em localhost use PIX. Após deploy, validar ambos. --}}
+{{-- Loja: Pagamento PIX + Cartão (Mercado Pago). Device ID para qualidade da integração. --}}
+<script src="https://www.mercadopago.com/v2/security.js" view="checkout"></script>
 <script src="https://sdk.mercadopago.com/js/v2"></script>
 <script>
     function paymentData() {
@@ -245,8 +246,9 @@
                 const payload = {
                     payment_method_id: 'pix',
                     transaction_amount: {{ $pedido->valor_total }},
-                    payer: { email: '{{ optional($pedido->user)->email ?? "cliente@email.com" }}' }, // PROTEÇÃO AQUI
-                    pedido_id: {{ $pedido->id }}
+                    payer: { email: '{{ optional($pedido->user)->email ?? "cliente@email.com" }}' },
+                    pedido_id: {{ $pedido->id }},
+                    device_id: (typeof MP_DEVICE_SESSION_ID !== 'undefined' ? MP_DEVICE_SESSION_ID : '')
                 };
 
                 fetch("{{ route('pagamento.processar') }}", {
@@ -355,7 +357,8 @@
                                 // Garante pedido_id e normaliza para o backend (Brick pode enviar camelCase)
                                 const payload = {
                                     ...cardFormData,
-                                    pedido_id: {{ $pedido->id }}
+                                    pedido_id: {{ $pedido->id }},
+                                    device_id: (typeof MP_DEVICE_SESSION_ID !== 'undefined' ? MP_DEVICE_SESSION_ID : '')
                                 };
                                 if (payload.paymentMethodId && !payload.payment_method_id) {
                                     payload.payment_method_id = payload.paymentMethodId;

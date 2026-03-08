@@ -3,13 +3,7 @@
 @section('title', $campeonato->nome . ' - Proticketsports')
 
 @push('styles')
-    <style>
-        [x-cloak] { display: none !important; }
-        .rank-1 { color: #d4af37; }
-        .rank-2 { color: #c0c0c0; }
-        .rank-3 { color: #cd7f32; }
-        .row-zebra li:nth-child(even) { background-color: #f8fafc; }
-    </style>
+    <style>[x-cloak] { display: none !important; }</style>
 @endpush
 
 @section('content')
@@ -131,61 +125,18 @@
             @endif
         </section>
 
-        {{-- Rankings (resultados) --}}
+        {{-- Link para ranking (lista em página separada com abas Atletas / Equipes) --}}
         @if($rankingAtletas->isNotEmpty() || $rankingEquipes->isNotEmpty())
-            <section>
-                <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                    <h2 class="text-xl font-black text-slate-900 flex items-center gap-2">
-                        <i class="fa-solid fa-trophy text-amber-500"></i>
-                        Resultados e ranking
-                    </h2>
-                    <a href="{{ route('campeonatos.ranking', $campeonato) }}" class="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 font-bold text-sm">
-                        Ver ranking completo por etapa <i class="fa-solid fa-arrow-right"></i>
-                    </a>
-                </div>
-                <p class="text-sm text-slate-500 mb-4">Soma dos pontos de todas as etapas. No ranking completo você vê a pontuação por etapa e o total.</p>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                @if($rankingAtletas->isNotEmpty())
-                    <section>
-                        <h3 class="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
-                            <i class="fa-solid fa-medal text-amber-500"></i>
-                            Atletas (top 10)
-                        </h3>
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                            <ul class="divide-y divide-gray-100 row-zebra">
-                                @foreach($rankingAtletas->take(10) as $idx => $item)
-                                    @php $medalClass = $idx < 3 ? 'rank-' . ($idx + 1) : ''; @endphp
-                                    <li class="px-4 py-3 flex items-center gap-3 hover:bg-orange-50/50 transition-colors">
-                                        <span class="flex-shrink-0 w-8 text-center font-black {{ $medalClass }}">{{ $idx + 1 }}º</span>
-                                        <span class="flex-1 font-medium text-slate-900 truncate">{{ $item->nome_atleta ?? $item->name ?? '—' }}</span>
-                                        <span class="flex-shrink-0 font-bold text-orange-600">{{ $item->total_pontos ?? 0 }} pts</span>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    </section>
-                @endif
-                @if($rankingEquipes->isNotEmpty())
-                    <section>
-                        <h3 class="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
-                            <i class="fa-solid fa-users text-blue-500"></i>
-                            Equipes (top 10)
-                        </h3>
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                            <ul class="divide-y divide-gray-100 row-zebra">
-                                @foreach($rankingEquipes->take(10) as $idx => $item)
-                                    @php $medalClass = $idx < 3 ? 'rank-' . ($idx + 1) : ''; @endphp
-                                    <li class="px-4 py-3 flex items-center gap-3 hover:bg-orange-50/50 transition-colors">
-                                        <span class="flex-shrink-0 w-8 text-center font-black {{ $medalClass }}">{{ $idx + 1 }}º</span>
-                                        <span class="flex-1 font-medium text-slate-900 truncate">{{ $item->nome_equipe ?? $item->nome ?? '—' }}</span>
-                                        <span class="flex-shrink-0 font-bold text-orange-600">{{ $item->total_pontos ?? 0 }} pts</span>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    </section>
-                @endif
-            </div>
+            <section class="bg-slate-50 rounded-xl border border-slate-200 p-6">
+                <h2 class="text-xl font-black text-slate-900 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-amber-500"></i>
+                    Ranking do campeonato
+                </h2>
+                <p class="text-sm text-slate-600 mb-4">Pontuação por etapa e total. Veja o ranking completo por atletas e por equipes em uma página dedicada.</p>
+                <a href="{{ route('campeonatos.ranking', $campeonato) }}" class="inline-flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg text-sm transition-colors">
+                    <i class="fa-solid fa-medal"></i> Ver ranking completo (por atleta e por equipe)
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
             </section>
         @endif
 

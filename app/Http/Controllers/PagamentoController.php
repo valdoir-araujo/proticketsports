@@ -97,18 +97,8 @@ class PagamentoController extends Controller
                 ->withErrors(['msg' => 'Pagamento temporariamente indisponível. Entre em contato com o organizador do evento.']);
         }
 
-        // 4. Gera o Checkout no Mercado Pago
-        try {
-            $preferenceId = $paymentGateway->createPreference($inscricao);
-            return view('pagamento.show', compact('inscricao', 'publicKey', 'preferenceId'));
-        } catch (\Exception $e) {
-            Log::error("Erro Checkout MP Inscrição #{$inscricao->id}: " . $e->getMessage());
-            $mensagem = str_contains($e->getMessage(), 'não configurado') || str_contains($e->getMessage(), 'organizador')
-                ? $e->getMessage()
-                : 'Erro ao carregar sistema de pagamento. Tente novamente.';
-            return redirect()->route('inscricao.show', $inscricao)
-                ->withErrors(['msg' => $mensagem]);
-        }
+        // 4. Exibe tela de pagamento (mesma regra da loja: sem preference; PIX/cartão via endpoint único)
+        return view('pagamento.show', compact('inscricao', 'publicKey'));
     }
 
     /**

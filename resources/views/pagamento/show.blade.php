@@ -1,377 +1,275 @@
-<x-app-layout>
-    {{-- Styles inline para garantir o carregamento --}}
-    <style>
-        .has-[:checked] {
-            --tw-border-opacity: 1;
-            border-color: rgb(249 115 22 / var(--tw-border-opacity));
-            background-color: rgb(255 247 237);
-            --tw-ring-color: rgb(249 115 22 / var(--tw-border-opacity));
-            --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-            --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-            box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
-        }
-        [x-cloak] { display: none !important; }
-        
-        /* Garantir altura mínima para os containers de pagamento */
-        #cardPaymentBrick_container, #pixPaymentBrick_container {
-            min-height: 150px;
-        }
-    </style>
+@extends('layouts.public')
 
-    {{-- CABEÇALHO HERO --}}
-    <div class="relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 pt-10 pb-32 overflow-hidden shadow-xl">
-        <div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(#fb923c 1.5px, transparent 1.5px); background-size: 24px 24px;"></div>
-        <div class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-orange-600/20 blur-3xl pointer-events-none mix-blend-screen animate-pulse-slow"></div>
+@section('title', 'Pagamento - Inscrição #' . $inscricao->id)
 
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-6">
-                <div class="text-white z-10 text-center md:text-left">
-                    <div class="inline-flex items-center gap-2 mb-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-xs font-bold text-orange-200 justify-center md:justify-start">
-                        <i class="fa-solid fa-lock"></i> Ambiente Seguro
-                    </div>
-                    <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white drop-shadow-md">
-                        Finalizar Inscrição
-                    </h1>
-                    <p class="text-blue-100 mt-2 text-lg font-light opacity-90">
-                        Escolha a melhor forma de pagamento para garantir a sua vaga.
-                    </p>
+@section('content')
+<div class="bg-gray-50 min-h-screen pt-24 pb-20 font-sans">
+    {{-- Header de Segurança (igual à loja) --}}
+    <div class="bg-white border-b border-gray-200 shadow-sm fixed top-16 left-0 w-full z-40 h-14 flex items-center">
+        <div class="container mx-auto px-4 md:px-8 max-w-6xl flex justify-between items-center">
+            <div class="flex items-center gap-2 text-green-600">
+                <i class="fa-solid fa-lock text-sm"></i>
+                <span class="text-xs font-bold uppercase tracking-wider">Ambiente 100% Seguro</span>
+            </div>
+            <div class="text-xs text-gray-500 hidden sm:block">
+                Inscrição <span class="font-mono font-bold text-gray-800">#{{ $inscricao->id }}</span>
+            </div>
+        </div>
+    </div>
+
+    @if ($errors->any())
+        <div class="container mx-auto px-4 md:px-8 max-w-6xl mt-6">
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r shadow-sm">
+                <p class="text-sm text-red-700 font-bold">{{ $errors->first() }}</p>
+            </div>
+        </div>
+    @endif
+
+    <div class="container mx-auto px-4 md:px-8 max-w-6xl mt-10">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            {{-- COLUNA 1: ÁREA DE PAGAMENTO (igual à loja) --}}
+            <div class="lg:col-span-2 space-y-6" x-data="paymentDataInscricao()">
+                <div>
+                    <h1 class="text-2xl font-black text-slate-800">Escolha a forma de pagamento</h1>
+                    <p class="text-slate-500 text-sm mt-1">Finalize sua inscrição com segurança.</p>
                 </div>
-                
-                <div class="z-10">
-                    <a href="{{ route('atleta.inscricoes') }}" class="inline-flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white text-sm font-bold transition-all">
-                        <i class="fa-solid fa-arrow-left mr-2"></i> Cancelar e Voltar
+
+                <div x-show="errorMessage" style="display: none;" class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r shadow-sm">
+                    <p class="text-sm text-red-700 font-bold" x-text="errorMessage"></p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <button type="button" @click="method = 'pix'; errorMessage = ''"
+                        :class="method === 'pix' ? 'border-green-500 bg-green-50 text-green-800 ring-1 ring-green-500' : 'border-slate-200 bg-white text-slate-600 hover:border-green-300 hover:bg-slate-50'"
+                        class="relative py-4 px-4 rounded-xl border-2 font-bold transition-all flex flex-col items-center justify-center gap-2 shadow-sm h-24">
+                        <i class="fa-brands fa-pix text-2xl"></i>
+                        <span>PIX</span>
+                        <div x-show="method === 'pix'" class="absolute top-2 right-2 text-green-600"><i class="fa-solid fa-circle-check"></i></div>
+                    </button>
+                    <button type="button" @click="method = 'card'; errorMessage = ''; $nextTick(() => { if (typeof initCardInscricao === 'function') initCardInscricao(); })"
+                        :class="method === 'card' ? 'border-blue-500 bg-blue-50 text-blue-800 ring-1 ring-blue-500' : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-slate-50'"
+                        class="relative py-4 px-4 rounded-xl border-2 font-bold transition-all flex flex-col items-center justify-center gap-2 shadow-sm h-24">
+                        <i class="fa-regular fa-credit-card text-2xl"></i>
+                        <span>Cartão de Crédito</span>
+                        <div x-show="method === 'card'" class="absolute top-2 right-2 text-blue-600"><i class="fa-solid fa-circle-check"></i></div>
+                    </button>
+                </div>
+
+                {{-- PIX (igual à loja: botão Gerar QR → exibe QR e copia e cola) --}}
+                <div x-show="method === 'pix'" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
+                    <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-8 text-center">
+                        <div x-show="!qrCodeBase64">
+                            <div class="mb-6">
+                                <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                                    <i class="fa-solid fa-qrcode"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-slate-800">Pagamento Instantâneo</h3>
+                                <p class="text-slate-500 text-sm mt-2 max-w-sm mx-auto">Gere o QR Code e pague pelo aplicativo do seu banco. A aprovação é imediata.</p>
+                            </div>
+                            <button type="button" @click="generatePix()" :disabled="loading"
+                                class="w-full md:w-auto px-10 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg shadow-green-200 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3 mx-auto disabled:opacity-70 disabled:cursor-not-allowed text-lg">
+                                <span x-show="!loading">Gerar QR Code PIX</span>
+                                <span x-show="loading" class="flex items-center gap-2"><i class="fa-solid fa-circle-notch fa-spin"></i> Gerando...</span>
+                            </button>
+                        </div>
+                        <div x-show="qrCodeBase64" style="display: none;">
+                            <div class="bg-green-50 text-green-800 px-4 py-2 rounded-lg mb-6 inline-flex items-center gap-2 border border-green-200 text-sm font-bold">
+                                <i class="fa-regular fa-clock"></i> Aguardando pagamento...
+                            </div>
+                            <div class="mb-6 flex justify-center">
+                                <div class="p-2 bg-white border-2 border-slate-100 rounded-xl shadow-sm">
+                                    <img :src="'data:image/png;base64,' + qrCodeBase64" class="w-64 h-64 rounded-lg object-contain" alt="QR Code PIX">
+                                </div>
+                            </div>
+                            <div class="max-w-md mx-auto mb-6">
+                                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block tracking-wide">Pix Copia e Cola</label>
+                                <div class="flex shadow-sm">
+                                    <input type="text" x-model="qrCode" readonly class="w-full bg-slate-50 border border-slate-200 text-slate-600 text-xs p-3 rounded-l-lg font-mono focus:outline-none focus:ring-0">
+                                    <button type="button" @click="copyCode()" class="bg-slate-800 text-white px-5 rounded-r-lg font-bold text-xs hover:bg-slate-900 transition-colors flex items-center gap-2">
+                                        <i class="fa-regular fa-copy"></i> <span x-text="copied ? 'Copiado!' : 'Copiar'"></span>
+                                    </button>
+                                </div>
+                            </div>
+                            <a href="{{ route('pagamento.sucesso', $inscricao) }}" class="text-sm text-blue-600 hover:underline">Já realizei o pagamento</a>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Cartão (Brick carregado ao selecionar aba, igual à loja) --}}
+                <div x-show="method === 'card'" x-transition:enter="transition ease-out duration-300" style="display: none;" x-cloak>
+                    <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6 relative min-h-[320px]">
+                        <div id="loading-card-inscricao" class="absolute inset-0 flex items-center justify-center bg-white z-20 rounded-xl">
+                            <div class="flex flex-col items-center">
+                                <i class="fa-solid fa-circle-notch fa-spin text-3xl text-blue-500 mb-2"></i>
+                                <span class="text-sm text-slate-500">Carregando formulário seguro...</span>
+                            </div>
+                        </div>
+                        <div id="cardPaymentBrick_container_inscricao" class="min-h-[280px]"></div>
+                    </div>
+                </div>
+
+                <div class="text-center md:text-left mt-8">
+                    <a href="{{ route('inscricao.show', $inscricao) }}" class="inline-flex items-center text-sm font-bold text-slate-400 hover:text-red-600 transition-colors gap-2 group">
+                        <i class="fa-solid fa-arrow-left transition-transform group-hover:-translate-x-1"></i> Cancelar e voltar
                     </a>
                 </div>
             </div>
-        </div>
-    </div>
 
-    {{-- CONTEÚDO PRINCIPAL --}}
-    <div class="relative z-20 -mt-20 pb-12">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-
-            {{-- Alerta de Erros --}}
-            @if ($errors->any())
-                <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-xl shadow-lg animate-fade-in">
-                    <div class="flex">
-                        <div class="flex-shrink-0"><i class="fa-solid fa-circle-exclamation text-red-500 text-xl"></i></div>
-                        <div class="ml-3">
-                            <h3 class="text-sm font-bold text-red-800">Problemas na inscrição:</h3>
-                            <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
-                                @foreach ($errors->all() as $error) <li>{{ $error }}</li> @endforeach
-                            </ul>
+            {{-- COLUNA 2: RESUMO --}}
+            <div class="lg:col-span-1 lg:sticky lg:top-36">
+                <div class="bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 p-5 border-b border-slate-200">
+                        <h3 class="font-bold text-slate-800 text-lg">Resumo da Inscrição</h3>
+                    </div>
+                    <div class="p-5 space-y-3 border-b border-slate-100">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Evento</p>
+                            <p class="font-bold text-slate-800">{{ $inscricao->evento->nome }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Atleta</p>
+                            <p class="font-medium text-slate-800">{{ $inscricao->atleta->user->name }}</p>
+                            <p class="text-xs text-slate-500">{{ $inscricao->categoria->nome }}</p>
                         </div>
                     </div>
-                </div>
-            @endif
-
-            {{-- Estrutura de Colunas --}}
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8" x-data="pagamentoInscricaoData({ processUrl: @json(route('pagamento.process', $inscricao)), csrfToken: @json(csrf_token()) })">
-                
-                {{-- COLUNA 1: Resumo do Pedido --}}
-                <div class="lg:col-span-1 order-2 lg:order-1">
-                    <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden sticky top-6">
-                        <div class="p-6 border-b border-slate-100 bg-slate-50/50">
-                            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                                <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
-                                    <i class="fa-solid fa-receipt"></i>
-                                </span>
-                                Resumo do Pedido
-                            </h2>
+                    <div class="p-5 space-y-2 bg-slate-50/50">
+                        <div class="flex justify-between text-sm text-slate-500">
+                            <span>Inscrição + itens</span>
+                            <span>R$ {{ number_format($inscricao->valor_pago, 2, ',', '.') }}</span>
                         </div>
-                        
-                        <div class="p-6 space-y-5">
-                            <div>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Evento</p>
-                                <p class="font-bold text-slate-900 text-lg leading-tight">{{ $inscricao->evento->nome }}</p>
-                            </div>
-
-                            <div>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Atleta</p>
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold">
-                                        {{ substr($inscricao->atleta->user->name, 0, 1) }}
-                                    </div>
-                                    <div>
-                                        <p class="font-bold text-slate-800">{{ $inscricao->atleta->user->name }}</p>
-                                        <p class="text-xs text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded inline-block">{{ $inscricao->categoria->nome }}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="border-t border-dashed border-slate-200 pt-4 space-y-3">
-                                <div class="flex justify-between items-center text-sm">
-                                    <span class="text-slate-600">Inscrição</span>
-                                    <span class="font-medium text-slate-900">R$ {{ number_format($inscricao->valor_original, 2, ',', '.') }}</span>
-                                </div>
-
-                                @if($inscricao->produtosOpcionais->isNotEmpty())
-                                    <div class="py-2">
-                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Itens Adicionais</p>
-                                        <ul class="space-y-2">
-                                            @foreach($inscricao->produtosOpcionais as $produto)
-                                                <li class="flex justify-between items-start text-xs">
-                                                    <span class="text-slate-600">
-                                                        {{ $produto->pivot->quantidade }}x {{ $produto->nome }}
-                                                        @if($produto->pivot->tamanho) <span class="text-slate-400">({{ $produto->pivot->tamanho }})</span> @endif
-                                                    </span>
-                                                    @if($produto->pivot->valor_pago_por_item > 0)
-                                                        <span class="font-medium text-slate-900">R$ {{ number_format($produto->pivot->valor_pago_por_item * $produto->pivot->quantidade, 2, ',', '.') }}</span>
-                                                    @else
-                                                        <span class="font-bold text-green-600 uppercase text-[10px]">Grátis</span>
-                                                    @endif
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
-                                @endif
-
-                                @if($inscricao->taxa_plataforma > 0)
-                                    <div class="flex justify-between items-center text-sm">
-                                        <span class="text-slate-600">Taxa de Serviço</span>
-                                        <span class="font-medium text-slate-900">R$ {{ number_format($inscricao->taxa_plataforma, 2, ',', '.') }}</span>
-                                    </div>
-                                @endif
-
-                                @if($inscricao->cupom_id)
-                                    <div class="flex justify-between items-center text-sm text-green-600 bg-green-50 p-2 rounded-lg border border-green-100">
-                                        <span class="flex items-center gap-1"><i class="fa-solid fa-tag"></i> Desconto ({{ $inscricao->cupom->codigo }})</span>
-                                        <span class="font-bold">- R$ {{ number_format($inscricao->valor_desconto ?? 0, 2, ',', '.') }}</span>
-                                    </div>
-                                @endif
-                            </div>
-
-                            <div class="pt-4 border-t-2 border-slate-100 flex justify-between items-center">
-                                <span class="text-sm font-bold text-slate-500 uppercase">Total a Pagar</span>
-                                <span class="text-3xl font-black text-indigo-700">R$ {{ number_format($inscricao->valor_pago, 2, ',', '.') }}</span>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-slate-50 p-4 text-xs text-slate-500 text-center border-t border-slate-100">
-                            <i class="fa-solid fa-shield-halved text-green-500 mr-1"></i> Ambiente 100% Seguro
+                        <div class="flex justify-between items-center pt-3 mt-2 border-t border-slate-200">
+                            <span class="font-bold text-slate-800">Total</span>
+                            <span class="text-2xl font-black text-green-600">R$ {{ number_format($inscricao->valor_pago, 2, ',', '.') }}</span>
                         </div>
                     </div>
-                </div>
-
-                {{-- COLUNA 2: Área de Pagamento --}}
-                <div class="lg:col-span-2 order-1 lg:order-2">
-                    <div class="bg-white rounded-2xl shadow-xl border border-slate-100 p-6 sm:p-8">
-                        
-                        @if($preferenceId)
-                            {{-- Navegação das Abas (PIX primeiro, como na loja) --}}
-                            <div class="flex p-1 bg-slate-100 rounded-xl mb-8 gap-1">
-                                <button type="button" @click="tab = 'pix'" 
-                                    :class="tab === 'pix' ? 'bg-white text-green-600 shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700'"
-                                    class="flex-1 min-h-[48px] py-3 rounded-lg text-base font-bold transition-all flex items-center justify-center gap-2 touch-manipulation">
-                                    <i class="fa-brands fa-pix text-lg"></i> PIX
-                                </button>
-                                <button type="button" @click="tab = 'card'" 
-                                    :class="tab === 'card' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700'"
-                                    class="flex-1 min-h-[48px] py-3 rounded-lg text-base font-bold transition-all flex items-center justify-center gap-2 touch-manipulation">
-                                    <i class="fa-regular fa-credit-card text-lg"></i> Cartão
-                                </button>
-                            </div>
-
-                            {{-- Container dos Formulários --}}
-                            <div id="payment-form-container" class="relative min-h-[300px]">
-                                
-                                {{-- Loading Overlay --}}
-                                <div x-show="processing" x-transition class="absolute inset-0 bg-white/90 z-50 flex flex-col items-center justify-center rounded-xl backdrop-blur-sm">
-                                    <i class="fa-solid fa-circle-notch fa-spin text-5xl text-orange-500 mb-4"></i>
-                                    <span class="font-bold text-slate-700 text-lg animate-pulse">Processando pagamento...</span>
-                                    <span class="text-sm text-slate-400 mt-2">Por favor, não feche a página.</span>
-                                </div>
-
-                                {{-- Aba Cartão --}}
-                                <div x-show="tab === 'card'" x-transition:enter="transition ease-out duration-300">
-                                    <div id="cardPaymentBrick_container">
-                                        <div class="text-center py-4 text-gray-400 text-sm italic">Carregando formulário de cartão...</div>
-                                    </div>
-                                </div>
-
-                                {{-- Aba PIX (mesma regra da loja: botão gera QR no backend) --}}
-                                <div x-show="tab === 'pix'" x-cloak x-transition:enter="transition ease-out duration-300">
-                                    <div class="text-center mb-6 p-6 bg-green-50 rounded-xl border border-green-100">
-                                        <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl shadow-sm">
-                                            <i class="fa-solid fa-bolt"></i>
-                                        </div>
-                                        <h3 class="font-bold text-green-800 text-lg mb-1">Pagamento Instantâneo</h3>
-                                        <p class="text-sm text-green-700 max-w-sm mx-auto">Seu pagamento é aprovado na hora. Basta apontar a câmera ou copiar o código.</p>
-                                    </div>
-                                    <div x-show="!pixQrBase64" class="text-center py-6">
-                                        <button type="button" @click="generatePix()" :disabled="pixLoading"
-                                            class="w-full md:w-auto px-10 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg shadow-green-200 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3 mx-auto disabled:opacity-70 disabled:cursor-not-allowed text-lg">
-                                            <span x-show="!pixLoading">Gerar QR Code PIX</span>
-                                            <span x-show="pixLoading" class="flex items-center gap-2">
-                                                <i class="fa-solid fa-circle-notch fa-spin"></i> Gerando...
-                                            </span>
-                                        </button>
-                                        <p x-show="pixError" x-text="pixError" class="mt-4 text-sm text-red-600 font-medium"></p>
-                                    </div>
-                                    <div x-show="pixQrBase64" class="bg-white rounded-xl border border-slate-200 p-8 text-center" style="display: none;">
-                                        <div class="bg-green-50 text-green-800 px-4 py-2 rounded-lg mb-6 inline-flex items-center gap-2 border border-green-200 text-sm font-bold">
-                                            <i class="fa-regular fa-clock"></i> Aguardando pagamento...
-                                        </div>
-                                        <div class="mb-6 flex justify-center">
-                                            <img :src="'data:image/png;base64,' + pixQrBase64" class="w-64 h-64 rounded-lg object-contain border-2 border-slate-100" alt="QR Code PIX">
-                                        </div>
-                                        <div class="max-w-md mx-auto mb-6">
-                                            <label class="text-xs font-bold text-slate-400 uppercase mb-2 block tracking-wide">PIX Copia e Cola</label>
-                                            <div class="flex shadow-sm">
-                                                <input type="text" x-model="pixQrCode" readonly class="w-full bg-slate-50 border border-slate-200 text-slate-600 text-xs p-3 rounded-l-lg font-mono focus:outline-none">
-                                                <button type="button" @click="copyPixCode()" class="bg-slate-800 text-white px-5 rounded-r-lg font-bold text-xs hover:bg-slate-900 transition-colors flex items-center gap-2">
-                                                    <i class="fa-regular fa-copy"></i> <span x-text="pixCopied ? 'Copiado!' : 'Copiar'"></span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <a href="{{ route('pagamento.sucesso', $inscricao) }}" class="text-sm text-indigo-600 hover:underline font-medium">Já realizei o pagamento</a>
-                                    </div>
-                                </div>
-
-                            </div>
-                        @else
-                            {{-- Erro ao carregar preferência --}}
-                            <div class="flex flex-col items-center justify-center py-16 text-center">
-                                <div class="bg-red-50 p-6 rounded-full mb-4 shadow-sm">
-                                    <i class="fa-solid fa-circle-exclamation text-4xl text-red-500"></i>
-                                </div>
-                                <h3 class="text-xl font-bold text-slate-800">Erro ao carregar pagamento</h3>
-                                <p class="text-slate-500 mt-2 max-w-md">Não conseguimos conectar com o provedor de pagamento. Verifique sua conexão e tente novamente.</p>
-                                <button onclick="window.location.reload()" class="mt-8 px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">
-                                    <i class="fa-solid fa-rotate-right mr-2"></i> Tentar Novamente
-                                </button>
-                            </div>
-                        @endif
-
-                        {{-- Tela de Status (Sucesso/Erro) --}}
-                        <div id="statusScreenBrick_container" class="mt-6"></div>
-                        
-                        {{-- Msg de Erro Genérica --}}
-                        <div id="paymentError" class="hidden mt-4 p-4 bg-red-50 text-red-700 rounded-xl border border-red-200 text-center text-sm font-bold flex items-center justify-center gap-2"></div>
-
-                    </div>
-                    
-                    {{-- Selos de Segurança --}}
-                    <div class="mt-8 flex justify-center gap-6 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                        <i class="fa-brands fa-cc-visa text-4xl text-blue-900"></i>
-                        <i class="fa-brands fa-cc-mastercard text-4xl text-red-600"></i>
-                        <i class="fa-brands fa-cc-amex text-4xl text-blue-500"></i>
-                        <div class="flex items-center gap-1 text-slate-600 font-bold text-lg"><i class="fa-solid fa-shield-halved"></i> SSL</div>
+                    <div class="bg-slate-100 p-4 text-center border-t border-slate-200">
+                        <img src="https://logopng.com.br/logos/mercado-pago-106.png" alt="Mercado Pago" class="h-5 opacity-50 grayscale mx-auto">
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
+@endsection
 
-    {{-- SCRIPTS --}}
-    <script src="https://sdk.mercadopago.com/js/v2"></script>
-    <script>
-        function pagamentoInscricaoData(config) {
-            return {
-                tab: 'pix',
-                processing: false,
-                processUrl: config.processUrl || '',
-                csrfToken: config.csrfToken || '',
-                pixLoading: false,
-                pixQrBase64: '',
-                pixQrCode: '',
-                pixCopied: false,
-                pixError: '',
-                generatePix() {
-                    this.pixLoading = true;
-                    this.pixError = '';
-                    fetch(this.processUrl, {
+@push('scripts')
+<script src="https://sdk.mercadopago.com/js/v2"></script>
+<script>
+(function() {
+    var processUrlInscricao = @json(route('pagamento.process', $inscricao));
+    var csrfInscricao = @json(csrf_token());
+    var emailInscricao = @json($inscricao->atleta->user->email ?? '');
+    var valorInscricao = @json((float) $inscricao->valor_pago);
+    var publicKeyInscricao = @json($publicKey ?? '');
+    var successUrlInscricao = @json(route('pagamento.sucesso', $inscricao));
+
+    window.paymentDataInscricao = function() {
+        return {
+            method: 'pix',
+            loading: false,
+            qrCode: '',
+            qrCodeBase64: '',
+            copied: false,
+            errorMessage: '',
+            init: function() {
+                if (!publicKeyInscricao) this.errorMessage = 'Chave do Mercado Pago não configurada.';
+            },
+            generatePix: function() {
+                var self = this;
+                this.loading = true;
+                this.errorMessage = '';
+                var payload = { payment_method_id: 'pix', payer: { email: emailInscricao } };
+                fetch(processUrlInscricao, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfInscricao, 'Accept': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(function(res) { return res.json().then(function(data) { if (!res.ok) throw new Error(data.message || 'Erro ' + res.status); return data; }); })
+                .then(function(data) {
+                    self.loading = false;
+                    if (data.status === 'success' && data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                        return;
+                    }
+                    if (data.qr_code_base64) {
+                        self.qrCodeBase64 = data.qr_code_base64;
+                        self.qrCode = data.qr_code || '';
+                    } else {
+                        self.errorMessage = data.message || 'Erro ao gerar PIX. Tente novamente.';
+                    }
+                })
+                .catch(function(err) {
+                    self.loading = false;
+                    self.errorMessage = err.message || 'Erro de conexão. Tente novamente.';
+                });
+            },
+            copyCode: function() {
+                var self = this;
+                if (!this.qrCode) return;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(this.qrCode).then(function() {
+                        self.copied = true;
+                        setTimeout(function() { self.copied = false; }, 2000);
+                    });
+                } else {
+                    var ta = document.createElement('textarea');
+                    ta.value = this.qrCode;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    ta.remove();
+                    this.copied = true;
+                    setTimeout(function() { this.copied = false; }, 2000);
+                }
+            }
+        };
+    };
+
+    var cardBrickCreatedInscricao = false;
+    window.initCardInscricao = function() {
+        if (cardBrickCreatedInscricao || !publicKeyInscricao) return;
+        cardBrickCreatedInscricao = true;
+        var mp = new MercadoPago(publicKeyInscricao, { locale: 'pt-BR' });
+        var bricksBuilder = mp.bricks();
+        var loadingEl = document.getElementById('loading-card-inscricao');
+        var container = document.getElementById('cardPaymentBrick_container_inscricao');
+        if (!container) return;
+        bricksBuilder.create('payment', 'cardPaymentBrick_container_inscricao', {
+            initialization: { amount: valorInscricao },
+            customization: {
+                paymentMethods: { maxInstallments: 12, ticket: 'nb', bankTransfer: 'nb', debitCard: 'nb', creditCard: 'all' },
+                visual: { style: { theme: 'bootstrap' } }
+            },
+            callbacks: {
+                onReady: function() { if (loadingEl) loadingEl.style.display = 'none'; },
+                onSubmit: function(formData) {
+                    var payload = formData;
+                    if (payload.paymentMethodId && !payload.payment_method_id) payload.payment_method_id = payload.paymentMethodId;
+                    if (payload.issuerId !== undefined && payload.issuer_id === undefined) payload.issuer_id = payload.issuerId;
+                    var root = document.querySelector('[x-data]');
+                    if (root && root.__x) root.__x.$data.loading = true;
+                    return fetch(processUrlInscricao, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrfToken, 'Accept': 'application/json' },
-                        body: JSON.stringify({ payment_method_id: 'pix', payer: { email: @json($inscricao->atleta->user->email ?? '') } })
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfInscricao, 'Accept': 'application/json' },
+                        body: JSON.stringify(payload)
                     })
-                    .then(r => r.json())
-                    .then(data => {
-                        this.pixLoading = false;
-                        if (data.status === 'success' && data.redirect_url) {
-                            window.location.href = data.redirect_url;
-                            return;
-                        }
-                        if (data.qr_code_base64) {
-                            this.pixQrBase64 = data.qr_code_base64;
-                            this.pixQrCode = data.qr_code || '';
-                        } else {
-                            this.pixError = data.message || 'Erro ao gerar PIX. Tente novamente.';
-                        }
+                    .then(function(r) { return r.json().then(function(d) { if (!r.ok) throw new Error(d.message || 'Erro'); return d; }); })
+                    .then(function(data) {
+                        if (root && root.__x) root.__x.$data.loading = false;
+                        if (data.redirect_url) { window.location.href = data.redirect_url; return; }
+                        if (data.payment_id) { window.location.href = successUrlInscricao; return; }
                     })
-                    .catch(err => {
-                        this.pixLoading = false;
-                        this.pixError = 'Erro de conexão. Tente novamente.';
+                    .catch(function(err) {
+                        if (root && root.__x) root.__x.$data.loading = false;
+                        if (root && root.__x) root.__x.$data.errorMessage = err.message || 'Erro ao processar.';
                     });
                 },
-                copyPixCode() {
-                    if (!this.pixQrCode) return;
-                    navigator.clipboard.writeText(this.pixQrCode).then(() => {
-                        this.pixCopied = true;
-                        setTimeout(() => { this.pixCopied = false; }, 2000);
-                    });
-                }
-            };
-        }
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const publicKey = @json($publicKey ?? '');
-            const preferenceId = @json($preferenceId ?? '');
-
-            if (publicKey && preferenceId) {
-                const mp = new MercadoPago(publicKey, { locale: 'pt-BR' });
-                const bricksBuilder = mp.bricks();
-
-                const showError = (msg) => {
-                    const el = document.getElementById('paymentError');
-                    if (el) { el.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${msg}`; el.classList.remove('hidden'); }
-                    setTimeout(() => el && el.classList.add('hidden'), 8000);
-                };
-
-                const renderStatusScreenBrick = async (paymentId) => {
-                    const container = document.getElementById('payment-form-container');
-                    if (container) container.style.display = 'none';
-                    const settings = {
-                        initialization: { paymentId: paymentId },
-                        callbacks: {
-                            onReady: () => { document.getElementById('statusScreenBrick_container')?.scrollIntoView({ behavior: 'smooth' }); },
-                            onError: (error) => console.error(error),
-                        },
-                    };
-                    await bricksBuilder.create('statusScreen', 'statusScreenBrick_container', settings);
-                };
-
-                bricksBuilder.create("cardPayment", "cardPaymentBrick_container", {
-                    initialization: {
-                        amount: @json((float) $inscricao->valor_pago),
-                        preferenceId: preferenceId,
-                    },
-                    customization: { visual: { style: { theme: 'bootstrap' }, hideFormTitle: true }, paymentMethods: { maxInstallments: 6 } },
-                    callbacks: {
-                        onReady: () => {},
-                        onSubmit: (cardFormData) => {
-                            const root = document.querySelector('[x-data]');
-                            if (root && root.__x) root.__x.$data.processing = true;
-                            document.getElementById('paymentError')?.classList.add('hidden');
-                            return fetch(@json(route('pagamento.process', $inscricao)), {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": @json(csrf_token()) },
-                                body: JSON.stringify(cardFormData),
-                            })
-                            .then(r => r.json())
-                            .then(data => {
-                                if (root && root.__x) root.__x.$data.processing = false;
-                                if (data.payment_id) { renderStatusScreenBrick(data.payment_id); return; }
-                                showError(data.message || 'Pagamento recusado.');
-                                throw new Error(data.message);
-                            })
-                            .catch(err => { if (root && root.__x) root.__x.$data.processing = false; showError('Erro de conexão.'); throw err; });
-                        },
-                        onError: (error) => console.error('Erro Cartão:', error),
-                    },
-                });
+                onError: function() { if (loadingEl) loadingEl.style.display = 'none'; }
             }
+        }).then(function() {}).catch(function() {
+            if (loadingEl) loadingEl.style.display = 'none';
         });
-    </script>
-</x-app-layout>
+    };
+})();
+</script>
+@endpush

@@ -5,10 +5,10 @@ Este documento descreve o que foi implementado para melhorar a pontuação em **
 ## O que foi implementado no código
 
 ### 1. Identificador do dispositivo (Device ID) — **obrigatório**
-- **Frontend:** Inclusão do script oficial `https://www.mercadopago.com/v2/security.js` com `view="checkout"` nas páginas de pagamento (inscrição e loja).
+- **Frontend:** Script oficial `https://www.mercadopago.com/v2/security.js` (view="checkout") e **SDK MercadoPago.JS V2** carregados no **&lt;head&gt;** do layout público (`layouts/public.blade.php`), para que todas as páginas de pagamento tenham SDK e Device ID disponíveis desde o carregamento (exigência da medição de qualidade).
 - O script expõe a variável global `MP_DEVICE_SESSION_ID`.
-- O valor é enviado no payload como `device_id` e no backend é repassado no header **X-Meli-Session-Id** na criação do pagamento (inscrição e loja).
-- **Arquivos:** `resources/views/pagamento/show.blade.php`, `resources/views/loja/pagamento.blade.php`, `app/Services/MercadoPagoService.php`, `app/Http/Controllers/LojaCheckoutController.php`.
+- O valor é enviado no payload como `device_id` (PIX e cartão) e no backend é repassado no header **X-Meli-Session-Id** na criação do pagamento (inscrição e loja).
+- **Arquivos:** `resources/views/layouts/public.blade.php`, `resources/views/pagamento/show.blade.php`, `resources/views/loja/pagamento.blade.php`, `app/Services/MercadoPagoService.php`, `app/Http/Controllers/LojaCheckoutController.php`.
 
 ### 2. Notificações Webhook — **obrigatório**
 - O campo **notification_url** é enviado em **todos** os pagamentos (PIX e cartão, inscrição e loja).
@@ -27,7 +27,9 @@ Este documento descreve o que foi implementado para melhorar a pontuação em **
 - **Arquivos:** `app/Services/MercadoPagoService.php`, `app/Http/Controllers/LojaCheckoutController.php`.
 
 ### 5. SDK MercadoPago.JS V2 e Secure Fields (PCI)
-- O checkout já utiliza o SDK oficial (`https://sdk.mercadopago.com/js/v2`) e o **Payment Brick**, que usa Secure Fields para captura de dados do cartão (PCI Compliance). Nenhuma alteração adicional foi necessária.
+- O **SDK MercadoPago.JS V2** é carregado no **&lt;head&gt;** do layout público (antes do conteúdo), para que a ferramenta de qualidade do MP detecte “SDK instalado”.
+- O checkout utiliza o **Payment Brick** (`bricksBuilder.create('payment', ...)`), que captura os dados do cartão via **Secure Fields** (iframes do MP), sem que número de cartão ou CVV passem pelo nosso servidor — atendendo PCI Compliance.
+- **Importante:** Após publicar essas alterações, faça um **novo pagamento de teste em produção** (cartão ou PIX) e use o **Payment ID** desse pagamento ao clicar em **Medir novamente**. A medição é baseada no último pagamento produtivo; se o ID for antigo, as melhorias podem não ser contabilizadas.
 
 ---
 

@@ -16,6 +16,10 @@
     {{-- Alpine.js --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
+    {{-- Mercado Pago: SDK V2 + Device ID (obrigatório para qualidade da integração e PCI) --}}
+    <script src="https://www.mercadopago.com/v2/security.js" view="checkout"></script>
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
+
     {{-- Font Awesome para Ícones --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 

@@ -197,9 +197,7 @@
 @endsection
 
 @push('scripts')
-{{-- Loja: Pagamento PIX + Cartão (Mercado Pago). Device ID para qualidade da integração. --}}
-<script src="https://www.mercadopago.com/v2/security.js" view="checkout"></script>
-<script src="https://sdk.mercadopago.com/js/v2"></script>
+{{-- SDK e Device ID já carregados no layout (public). Aqui só a lógica do Brick e envio. --}}
 <script>
     function paymentData() {
         return {
@@ -358,7 +356,7 @@
                                 const payload = {
                                     ...cardFormData,
                                     pedido_id: {{ $pedido->id }},
-                                    device_id: (typeof MP_DEVICE_SESSION_ID !== 'undefined' ? MP_DEVICE_SESSION_ID : '')
+                                    device_id: (typeof MP_DEVICE_SESSION_ID !== 'undefined' ? MP_DEVICE_SESSION_ID : '') || cardFormData.deviceId || cardFormData.device_id || ''
                                 };
                                 if (payload.paymentMethodId && !payload.payment_method_id) {
                                     payload.payment_method_id = payload.paymentMethodId;

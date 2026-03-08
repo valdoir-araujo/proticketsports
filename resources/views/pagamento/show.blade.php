@@ -153,9 +153,7 @@
 @endsection
 
 @push('scripts')
-{{-- Device ID para qualidade da integração Mercado Pago (identificador do dispositivo) --}}
-<script src="https://www.mercadopago.com/v2/security.js" view="checkout"></script>
-<script src="https://sdk.mercadopago.com/js/v2"></script>
+{{-- SDK e Device ID já carregados no layout (public). Aqui só a lógica do Brick e envio. --}}
 <script>
 (function() {
     var processUrlInscricao = @json(route('pagamento.process', $inscricao));
@@ -251,7 +249,7 @@
                     var payload = Object.assign({}, formData);
                     if (payload.paymentMethodId && !payload.payment_method_id) payload.payment_method_id = payload.paymentMethodId;
                     if (payload.issuerId !== undefined && payload.issuer_id === undefined) payload.issuer_id = payload.issuerId;
-                    if (typeof MP_DEVICE_SESSION_ID !== 'undefined') payload.device_id = MP_DEVICE_SESSION_ID;
+                    payload.device_id = payload.device_id || payload.deviceId || (typeof MP_DEVICE_SESSION_ID !== 'undefined' ? MP_DEVICE_SESSION_ID : '');
                     var root = document.querySelector('[x-data]');
                     if (root && root.__x) root.__x.$data.loading = true;
                     return fetch(processUrlInscricao, {

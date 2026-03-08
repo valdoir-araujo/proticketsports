@@ -228,13 +228,16 @@
     var cardBrickCreatedInscricao = false;
     window.initCardInscricao = function() {
         if (cardBrickCreatedInscricao || !publicKeyInscricao) return;
-        cardBrickCreatedInscricao = true;
-        var mp = new MercadoPago(publicKeyInscricao, { locale: 'pt-BR' });
-        var bricksBuilder = mp.bricks();
-        var loadingEl = document.getElementById('loading-card-inscricao');
         var container = document.getElementById('cardPaymentBrick_container_inscricao');
         if (!container) return;
-        bricksBuilder.create('payment', 'cardPaymentBrick_container_inscricao', {
+        // Pequeno atraso para o painel do cartão estar visível (x-show) e o container ter dimensões
+        var doCreate = function() {
+            if (cardBrickCreatedInscricao) return;
+            cardBrickCreatedInscricao = true;
+            var mp = new MercadoPago(publicKeyInscricao, { locale: 'pt-BR' });
+            var bricksBuilder = mp.bricks();
+            var loadingEl = document.getElementById('loading-card-inscricao');
+            bricksBuilder.create('payment', 'cardPaymentBrick_container_inscricao', {
             initialization: { amount: valorInscricao },
             customization: {
                 paymentMethods: { maxInstallments: 12, ticket: 'nb', bankTransfer: 'nb', debitCard: 'nb', creditCard: 'all' },
@@ -275,8 +278,11 @@
                 onError: function() { if (loadingEl) loadingEl.style.display = 'none'; }
             }
         }).then(function() {}).catch(function() {
+            cardBrickCreatedInscricao = false;
             if (loadingEl) loadingEl.style.display = 'none';
         });
+        };
+        setTimeout(doCreate, 80);
     };
 })();
 </script>

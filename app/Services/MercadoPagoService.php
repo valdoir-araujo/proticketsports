@@ -152,7 +152,7 @@ class MercadoPagoService implements PaymentGatewayInterface
 
     /**
      * Processa os dados de pagamento recebidos do Brick (cartão).
-     * Estrutura alinhada à loja: payment_method_id, token, installments, issuer_id (opcional), payer.
+     * Estrutura alinhada à loja: payment_method_id, token, installments, issuer_id, payer (email + identification).
      */
     public function processPayment(array $data, Inscricao $inscricao): array
     {
@@ -161,21 +161,29 @@ class MercadoPagoService implements PaymentGatewayInterface
             $client = new PaymentClient();
             $paymentMethodId = $data['payment_method_id'] ?? $data['paymentMethodId'] ?? null;
             $token = $data['token'] ?? null;
+            if (empty($token)) {
+                Log::warning('Inscrição cartão: token ausente.', ['inscricao_id' => $inscricao->id]);
+                return ['status' => 'error', 'message' => 'Dados do cartão incompletos. Tente novamente.'];
+            }
+            if (empty($paymentMethodId)) {
+                Log::warning('Inscrição cartão: payment_method_id ausente.', ['inscricao_id' => $inscricao->id]);
+                return ['status' => 'error', 'message' => 'Tipo de cartão não identificado. Tente novamente.'];
+            }
             $installments = max(1, (int) ($data['installments'] ?? 1));
             $issuerId = $data['issuer_id'] ?? $data['issuerId'] ?? null;
 
+            $payer = [
+                'email' => $data['payer']['email'] ?? $inscricao->atleta->user->email ?? '',
+                'first_name' => $data['payer']['first_name'] ?? $inscricao->atleta->user->name ?? 'Cliente',
+            ];
             $payerDoc = '';
             if (!empty($data['payer']['identification']['number'])) {
                 $payerDoc = preg_replace('/[^0-9]/', '', (string) $data['payer']['identification']['number']);
             }
-            if ($payerDoc === '' && $inscricao->atleta && $inscricao->atleta->cpf) {
+            if ($payerDoc === '' && $inscricao->atleta && !empty($inscricao->atleta->cpf)) {
                 $payerDoc = preg_replace('/[^0-9]/', '', (string) $inscricao->atleta->cpf);
             }
             $payerType = $data['payer']['identification']['type'] ?? 'CPF';
-
-            $payer = [
-                'email' => $data['payer']['email'] ?? $inscricao->atleta->user->email ?? '',
-            ];
             if ($payerDoc !== '') {
                 $payer['identification'] = ['type' => $payerType, 'number' => $payerDoc];
             }
@@ -190,7 +198,7 @@ class MercadoPagoService implements PaymentGatewayInterface
                 'payer' => $payer,
                 'additional_info' => ['ip_address' => $data['payer_ip'] ?? request()->ip()],
             ];
-            if ($issuerId !== null && $issuerId !== '') {
+            if ($issuerId !== null && $issuerId !== '' && $issuerId !== 0) {
                 $payment_request['issuer_id'] = (int) $issuerId;
             }
 

@@ -54,100 +54,95 @@
                         @endif
                     </div>
 
-                    {{-- Conteúdo: Atletas --}}
+                    {{-- Conteúdo: Atletas — cards por categoria, visual limpo --}}
                     <div x-show="tab === 'atletas'" x-cloak
-                         class="bg-white rounded-b-2xl shadow-lg border border-slate-200 border-t-0 overflow-hidden">
-                        <div class="px-6 lg:px-8 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+                         class="bg-slate-50/50 rounded-b-2xl shadow-lg border border-slate-200 border-t-0 overflow-hidden">
+                        <div class="px-6 lg:px-8 py-5 border-b border-slate-200 bg-white">
                             <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                                 <i class="fa-solid fa-stopwatch text-orange-500"></i> Classificação por categoria
                             </h2>
+                            <p class="text-sm text-slate-500 mt-1">Encontre sua categoria e confira sua posição e tempo.</p>
                         </div>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-slate-200">
-                                <thead class="bg-slate-50/80">
-                                    <tr>
-                                        <th class="px-6 lg:px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Atleta / Categoria</th>
-                                        <th class="px-6 lg:px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-36">Tempo</th>
-                                        <th class="px-6 lg:px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-28">Status</th>
-                                        <th class="px-6 lg:px-8 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider w-20">Pos.</th>
-                                        <th class="px-6 lg:px-8 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider w-24">Pontos</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-slate-100">
-                                    @forelse($inscricoesAgrupadas as $nomePercurso => $generos)
-                                        <tr class="bg-slate-700 text-white">
-                                            <td colspan="5" class="px-6 lg:px-8 py-3 text-left text-sm font-bold flex items-center gap-2">
-                                                <i class="fa-solid fa-route text-orange-400"></i> {{ $nomePercurso ?: 'N/A' }}
-                                            </td>
-                                        </tr>
+                        <div class="p-6 lg:p-8 space-y-8">
+                            @forelse($inscricoesAgrupadas as $nomePercurso => $generos)
+                                {{-- Percurso (ex: Pro, Sport) --}}
+                                <section>
+                                    <div class="flex items-center gap-2 mb-4">
+                                        <span class="flex items-center justify-center w-10 h-10 rounded-xl bg-orange-500 text-white">
+                                            <i class="fa-solid fa-route text-lg"></i>
+                                        </span>
+                                        <h3 class="text-xl font-bold text-slate-800">{{ $nomePercurso ?: 'Geral' }}</h3>
+                                    </div>
+                                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                         @foreach($generos as $nomeGenero => $categorias)
                                             @foreach($categorias as $nomeCategoria => $inscritosNaCategoria)
-                                                <tr class="bg-slate-100/80 border-y border-slate-200">
-                                                    <td colspan="5" class="px-6 lg:px-8 py-2.5 text-left text-sm font-bold text-slate-800 flex items-center gap-2">
-                                                        <i class="fa-solid fa-layer-group text-orange-500"></i> {{ $nomeCategoria }}
-                                                        <span class="text-xs font-normal text-slate-500 bg-white px-2.5 py-1 rounded-full border border-slate-200 shadow-sm">{{ $inscritosNaCategoria->count() }} atletas</span>
-                                                    </td>
-                                                </tr>
-                                                @foreach($inscritosNaCategoria->sortBy('resultado.posicao_categoria') as $inscricao)
-                                                    <tr class="hover:bg-orange-50/30 transition-colors">
-                                                        <td class="pl-8 lg:pl-10 pr-6 lg:pr-8 py-3 whitespace-nowrap">
-                                                            <div class="flex items-center gap-3">
-                                                                <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 text-sm font-bold shrink-0 ring-2 ring-white shadow">
-                                                                    {{ $inscricao->atleta->iniciais ?? substr(optional($inscricao->atleta->user)->name ?? '?', 0, 2) }}
+                                                {{-- Card por categoria (ex: Elite, Master A2) --}}
+                                                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                                                    <div class="px-5 py-3 bg-white border-b border-slate-100 flex items-center justify-between">
+                                                        <span class="font-bold text-slate-800">{{ $nomeCategoria }}</span>
+                                                        <span class="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">{{ $inscritosNaCategoria->count() }} {{ $inscritosNaCategoria->count() === 1 ? 'atleta' : 'atletas' }}</span>
+                                                    </div>
+                                                    <ul class="divide-y divide-slate-100">
+                                                        @foreach($inscritosNaCategoria->sortBy('resultado.posicao_categoria') as $inscricao)
+                                                            @php
+                                                                $pos = $inscricao->resultado?->posicao_categoria;
+                                                                $posClass = $pos === 1 ? 'bg-amber-400 text-white' : ($pos === 2 ? 'bg-slate-400 text-white' : ($pos === 3 ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'));
+                                                            @endphp
+                                                            <li class="px-5 py-4 hover:bg-slate-50/80 transition-colors flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                                                                <div class="flex items-center gap-4 min-w-0 flex-1">
+                                                                    <span class="flex-shrink-0 w-10 h-10 rounded-xl {{ $posClass }} flex items-center justify-center text-sm font-bold">
+                                                                        @if($pos){{ $pos }}º@else—@endif
+                                                                    </span>
+                                                                    <div class="min-w-0">
+                                                                        <div class="font-bold text-slate-800 truncate">{{ $inscricao->atleta->user->name ?? '—' }}</div>
+                                                                        @if($inscricao->numero_atleta)
+                                                                            <div class="text-xs text-slate-500 font-mono">Nº {{ $inscricao->numero_atleta }}</div>
+                                                                        @endif
+                                                                    </div>
                                                                 </div>
-                                                                <div>
-                                                                    <div class="text-sm font-bold text-slate-800">{{ $inscricao->atleta->user->name ?? '—' }}</div>
-                                                                    @if($inscricao->numero_atleta)
-                                                                        <div class="text-xs text-slate-500 font-mono">Num. {{ $inscricao->numero_atleta }}</div>
-                                                                    @endif
+                                                                <div class="grid grid-cols-3 gap-3 sm:flex sm:items-center sm:gap-6 text-sm flex-shrink-0 border-t border-slate-100 pt-3 sm:border-0 sm:pt-0">
+                                                                    <div>
+                                                                        <div class="text-xs text-slate-400 uppercase tracking-wide">Tempo</div>
+                                                                        <div class="font-mono font-semibold text-slate-700">{{ $inscricao->resultado?->tempo_formatado ?? '—' }}</div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <div class="text-xs text-slate-400 uppercase tracking-wide">Status</div>
+                                                                        <div class="font-medium">
+                                                                            @if($inscricao->resultado)
+                                                                                @switch($inscricao->resultado->status_corrida)
+                                                                                    @case('completou')<span class="text-emerald-600">Completou</span>@break
+                                                                                    @case('nao_completou')<span class="text-slate-600">Não completou</span>@break
+                                                                                    @case('nao_iniciada')<span class="text-slate-500">Não iniciada</span>@break
+                                                                                    @case('desqualificado')<span class="text-red-600">Desqualificado</span>@break
+                                                                                    @default<span>{{ $inscricao->resultado->status_corrida ?? '—' }}</span>@break
+                                                                                @endswitch
+                                                                            @else
+                                                                                <span class="text-slate-400">—</span>
+                                                                            @endif
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <div class="text-xs text-slate-400 uppercase tracking-wide">Pontos</div>
+                                                                        @if($inscricao->resultado?->pontos_etapa !== null)
+                                                                            <div class="font-bold text-orange-600">{{ $inscricao->resultado->pontos_etapa }}</div>
+                                                                        @else
+                                                                            <div class="text-slate-400">—</div>
+                                                                        @endif
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        </td>
-                                                        <td class="px-6 lg:px-8 py-3 text-sm font-mono font-medium text-slate-700">
-                                                            {{ $inscricao->resultado?->tempo_formatado ?? '—' }}
-                                                        </td>
-                                                        <td class="px-6 lg:px-8 py-3 text-sm text-slate-700">
-                                                            @if($inscricao->resultado)
-                                                                @switch($inscricao->resultado->status_corrida)
-                                                                    @case('completou') <span class="text-emerald-600 font-medium">Completou</span> @break
-                                                                    @case('nao_completou') Não completou @break
-                                                                    @case('nao_iniciada') Não iniciada @break
-                                                                    @case('desqualificado') Desqualificado @break
-                                                                    @default {{ $inscricao->resultado->status_corrida ?? '—' }}
-                                                                @endswitch
-                                                            @else
-                                                                —
-                                                            @endif
-                                                        </td>
-                                                        <td class="px-6 lg:px-8 py-3 text-center">
-                                                            @if($inscricao->resultado?->posicao_categoria)
-                                                                <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-800 text-white text-sm font-bold shadow-md">
-                                                                    {{ $inscricao->resultado->posicao_categoria }}º
-                                                                </span>
-                                                            @else
-                                                                <span class="text-slate-300">—</span>
-                                                            @endif
-                                                        </td>
-                                                        <td class="px-6 lg:px-8 py-3 text-center">
-                                                            @if($inscricao->resultado?->pontos_etapa !== null)
-                                                                <span class="inline-flex items-center justify-center min-w-[2.5rem] px-2 py-1 rounded-lg bg-orange-100 text-orange-700 font-bold text-sm">{{ $inscricao->resultado->pontos_etapa }}</span>
-                                                            @else
-                                                                <span class="text-slate-300">—</span>
-                                                            @endif
-                                                        </td>
-                                                    </tr>
-                                                @endforeach
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
                                             @endforeach
                                         @endforeach
-                                    @empty
-                                        <tr>
-                                            <td colspan="5" class="px-6 lg:px-8 py-12 text-center text-slate-500">
-                                                Nenhum resultado por atleta nesta etapa.
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
+                                    </div>
+                                </section>
+                            @empty
+                                <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500">
+                                    Nenhum resultado por atleta nesta etapa.
+                                </div>
+                            @endforelse
                         </div>
                     </div>
 

@@ -162,7 +162,14 @@ class PublicEventController extends Controller
             ->sortByDesc('pontos_totais')
             ->values();
 
-        return view('eventos.public.resultados', compact('evento', 'inscricoes', 'rankingEquipesEtapa'));
+        $categoriasParaFiltro = $inscricoes->map(function ($inscricao) {
+            if ($inscricao->categoria && $inscricao->categoria->percurso) {
+                return $inscricao->categoria->percurso->descricao . ' | ' . $inscricao->categoria->nome . ' - ' . ucfirst($inscricao->categoria->genero);
+            }
+            return null;
+        })->filter()->unique()->sort()->values();
+
+        return view('eventos.public.resultados', compact('evento', 'inscricoes', 'rankingEquipesEtapa', 'categoriasParaFiltro'));
     }
 }
 

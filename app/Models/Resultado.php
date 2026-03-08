@@ -23,6 +23,8 @@ class Resultado extends Model
         'status_corrida',
     ];
 
+    protected $appends = ['tempo_formatado'];
+
     /**
      * Define a relação: um resultado pertence a uma inscrição.
      */

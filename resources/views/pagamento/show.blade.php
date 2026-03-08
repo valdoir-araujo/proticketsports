@@ -105,6 +105,7 @@
                             </div>
                         </div>
                         <div id="cardPaymentBrick_container_inscricao" class="min-h-[280px]"></div>
+                        <p class="text-xs text-slate-400 mt-3">Se o formulário não aparecer, use <strong>PIX</strong> acima — é rápido e seguro.</p>
                     </div>
                 </div>
 
@@ -226,17 +227,40 @@
     };
 
     var cardBrickCreatedInscricao = false;
+    function setCardErrorInscricao(msg) {
+        var root = document.querySelector('[x-data*="paymentDataInscricao"]');
+        if (root && root.__x && root.__x.$data) root.__x.$data.errorMessage = msg;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     window.initCardInscricao = function() {
         if (cardBrickCreatedInscricao || !publicKeyInscricao) return;
         var container = document.getElementById('cardPaymentBrick_container_inscricao');
         if (!container) return;
-        // Pequeno atraso para o painel do cartão estar visível (x-show) e o container ter dimensões
-        var doCreate = function() {
-            if (cardBrickCreatedInscricao) return;
-            cardBrickCreatedInscricao = true;
-            var mp = new MercadoPago(publicKeyInscricao, { locale: 'pt-BR' });
-            var bricksBuilder = mp.bricks();
+        if (window.location.protocol !== 'https:' && !/localhost|127\.0\.0\.1/.test(window.location.hostname)) {
+            setCardErrorInscricao('Pagamento com cartão só está disponível em ambiente seguro (HTTPS). Por favor, use PIX para pagar.');
             var loadingEl = document.getElementById('loading-card-inscricao');
+            if (loadingEl) loadingEl.style.display = 'none';
+            return;
+        }
+        // Atraso para o painel do cartão estar visível (x-show) e o container ter dimensões
+        var doCreate = function() {
+            var loadingEl = document.getElementById('loading-card-inscricao');
+            if (cardBrickCreatedInscricao) return;
+            if (typeof MercadoPago === 'undefined') {
+                setCardErrorInscricao('Formulário de cartão não carregou. Por favor, use PIX para pagar ou recarregue a página.');
+                if (loadingEl) loadingEl.style.display = 'none';
+                return;
+            }
+            cardBrickCreatedInscricao = true;
+            try {
+                var mp = new MercadoPago(publicKeyInscricao, { locale: 'pt-BR' });
+                var bricksBuilder = mp.bricks();
+            } catch (e) {
+                cardBrickCreatedInscricao = false;
+                if (loadingEl) loadingEl.style.display = 'none';
+                setCardErrorInscricao('Erro ao iniciar o pagamento com cartão. Use PIX para pagar.');
+                return;
+            }
             bricksBuilder.create('payment', 'cardPaymentBrick_container_inscricao', {
             initialization: { amount: valorInscricao },
             customization: {
@@ -276,14 +300,18 @@
                         throw err;
                     });
                 },
-                onError: function() { if (loadingEl) loadingEl.style.display = 'none'; }
+                onError: function() {
+                    if (loadingEl) loadingEl.style.display = 'none';
+                    setCardErrorInscricao('O formulário de cartão apresentou um erro. Por favor, use PIX para pagar.');
+                }
             }
-        }).then(function() {}).catch(function() {
+        }).then(function() {}).catch(function(err) {
             cardBrickCreatedInscricao = false;
             if (loadingEl) loadingEl.style.display = 'none';
+            setCardErrorInscricao('O formulário de cartão não está disponível neste momento. Por favor, use PIX para pagar — é rápido e seguro.');
         });
         };
-        setTimeout(doCreate, 80);
+        setTimeout(doCreate, 250);
     };
 })();
 </script>

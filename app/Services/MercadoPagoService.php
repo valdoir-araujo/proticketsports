@@ -242,12 +242,20 @@ class MercadoPagoService implements PaymentGatewayInterface
             $payment = $client->get($paymentId);
             if (!$payment) return null;
 
+            $pedidoLojaId = null;
+            if (!empty($payment->metadata) && is_object($payment->metadata) && isset($payment->metadata->pedido_loja_id)) {
+                $pedidoLojaId = $payment->metadata->pedido_loja_id;
+            } elseif (!empty($payment->metadata) && is_array($payment->metadata) && isset($payment->metadata['pedido_loja_id'])) {
+                $pedidoLojaId = $payment->metadata['pedido_loja_id'];
+            }
+
             return [
                 'payment_id' => $payment->id,
                 'status'     => $payment->status,
                 'amount'     => $payment->transaction_amount,
-                'inscricao_id' => $payment->external_reference,
-                'payment_method' => $payment->payment_method_id
+                'inscricao_id' => $payment->external_reference ?? null,
+                'pedido_loja_id' => $pedidoLojaId,
+                'payment_method' => $payment->payment_method_id ?? null,
             ];
         } catch (\Exception $e) {
             Log::error("Erro Webhook Service: " . $e->getMessage());

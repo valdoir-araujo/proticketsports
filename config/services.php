@@ -41,12 +41,11 @@ return [
         ],
     ],
 
-    // 🟢 AJUSTE DO MERCADO PAGO
-    // A chave foi alterada de 'token' para 'access_token' para bater com o Controller
+    // 🟢 MERCADO PAGO (aceita MERCADOPAGO_* ou MERCADO_PAGO_* no .env)
     'mercadopago' => [
-        'public_key'    => env('MERCADOPAGO_PUBLIC_KEY'),
-        'access_token'  => env('MERCADOPAGO_ACCESS_TOKEN'),
-        'webhook_secret' => env('MERCADOPAGO_WEBHOOK_SECRET'), // Assinatura em Suas integrações > Webhooks
+        'public_key'    => env('MERCADOPAGO_PUBLIC_KEY') ?? env('MERCADO_PAGO_PUBLIC_KEY'),
+        'access_token'  => env('MERCADOPAGO_ACCESS_TOKEN') ?? env('MERCADO_PAGO_ACCESS_TOKEN'),
+        'webhook_secret' => env('MERCADOPAGO_WEBHOOK_SECRET') ?? env('MERCADO_PAGO_WEBHOOK_SECRET'),
     ],
     
     // Configuração para definir qual Gateway é o padrão

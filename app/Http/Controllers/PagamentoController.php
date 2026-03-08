@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Interfaces\PaymentGatewayInterface;
 use App\Models\Cupom;
 use App\Models\Inscricao;
+use App\Models\PedidoLoja;
 use App\Models\ProdutoOpcional;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -86,25 +87,27 @@ class PagamentoController extends Controller
             }
         }
 
-        // 3. Gera o Checkout no Mercado Pago
+        // 3. Verifica se o gateway de pagamento está configurado (evita erro genérico para o usuário)
+        $publicKey = config('services.mercadopago.public_key') ?: env('MERCADOPAGO_PUBLIC_KEY');
+        $accessToken = config('services.mercadopago.access_token') ?: config('services.mercadopago.token')
+            ?: env('MERCADOPAGO_ACCESS_TOKEN') ?: env('MERCADOPAGO_TOKEN');
+        if (empty($publicKey) || empty($accessToken)) {
+            Log::warning("Checkout inscrição #{$inscricao->id}: Mercado Pago não configurado (public_key ou access_token ausente).");
+            return redirect()->route('inscricao.show', $inscricao)
+                ->withErrors(['msg' => 'Pagamento temporariamente indisponível. Entre em contato com o organizador do evento.']);
+        }
+
+        // 4. Gera o Checkout no Mercado Pago
         try {
-            // Gera a preferência no Mercado Pago
             $preferenceId = $paymentGateway->createPreference($inscricao);
-            
-            // Pega a chave pública do arquivo de configuração
-            $publicKey = config('services.mercadopago.public_key') ?? env('MERCADOPAGO_PUBLIC_KEY');
-
-            if (empty($publicKey)) {
-                throw new \Exception('Chave pública do Mercado Pago não configurada.');
-            }
-
             return view('pagamento.show', compact('inscricao', 'publicKey', 'preferenceId'));
-
         } catch (\Exception $e) {
             Log::error("Erro Checkout MP Inscrição #{$inscricao->id}: " . $e->getMessage());
-            
+            $mensagem = str_contains($e->getMessage(), 'não configurado') || str_contains($e->getMessage(), 'organizador')
+                ? $e->getMessage()
+                : 'Erro ao carregar sistema de pagamento. Tente novamente.';
             return redirect()->route('inscricao.show', $inscricao)
-                             ->withErrors(['msg' => 'Erro ao carregar sistema de pagamento. Tente novamente.']);
+                ->withErrors(['msg' => $mensagem]);
         }
     }
 
@@ -207,7 +210,23 @@ class PagamentoController extends Controller
             $data = $paymentGateway->handleWebhook($request);
 
             if ($data && $data['status'] === 'approved') {
-                $inscricao = Inscricao::with('produtosOpcionais')->find($data['inscricao_id']);
+                // Pedido da loja (PIX/cartão): mesma regra que inscrição — confirmar via webhook
+                if (!empty($data['pedido_loja_id'])) {
+                    $pedido = PedidoLoja::find($data['pedido_loja_id']);
+                    if ($pedido && $pedido->status !== 'pago') {
+                        $pedido->update([
+                            'status' => 'pago',
+                            'gateway_payment_id' => (string) ($data['payment_id'] ?? ''),
+                        ]);
+                        if ($pedido->cupom_id) {
+                            Cupom::where('id', $pedido->cupom_id)->increment('usos');
+                        }
+                        Log::info("Pedido Loja #{$pedido->id} confirmado via webhook.");
+                    }
+                }
+
+                // Inscrição (external_reference = id da inscrição)
+                $inscricao = $data['inscricao_id'] ? Inscricao::with('produtosOpcionais')->find($data['inscricao_id']) : null;
 
                 // Só processa se ainda estiver aguardando (evita duplicidade)
                 if ($inscricao && $inscricao->status !== 'confirmada') {

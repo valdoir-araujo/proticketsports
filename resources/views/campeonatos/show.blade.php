@@ -30,24 +30,7 @@
 
     <div class="max-w-7xl mx-auto p-4 md:p-8 min-h-screen space-y-10">
 
-        @php
-            $etapasRealizadas = $etapas->filter(fn($e) => $e->data_evento && $e->data_evento->isPast());
-        @endphp
-
-        {{-- Resumo do campeonato (sem link de ranking geral; ranking só dentro de cada card da etapa) --}}
-        <div class="flex flex-wrap items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
-            <span class="inline-flex items-center gap-2 text-slate-700 font-medium">
-                <i class="fa-solid fa-flag-checkered text-orange-500"></i>
-                <strong>{{ $etapas->count() }}</strong> {{ $etapas->count() === 1 ? 'etapa' : 'etapas' }}
-            </span>
-            @if($etapas->isNotEmpty())
-                <span class="text-slate-500">·</span>
-                <span class="text-slate-600">
-                    <strong>{{ $etapasRealizadas->count() }}</strong> {{ $etapasRealizadas->count() === 1 ? 'realizada' : 'realizadas' }}
-                </span>
-            @endif
-        </div>
-
+        {{-- Apenas os cards das etapas (sem card de resumo nem ranking do campeonato) --}}
         {{-- Etapas --}}
         <section>
             <h2 class="text-2xl font-black text-slate-900 mb-6 flex items-center gap-2">

@@ -32,10 +32,9 @@
 
         @php
             $etapasRealizadas = $etapas->filter(fn($e) => $e->data_evento && $e->data_evento->isPast());
-            $temRanking = $rankingAtletas->isNotEmpty() || $rankingEquipes->isNotEmpty();
         @endphp
 
-        {{-- Resumo do campeonato --}}
+        {{-- Resumo do campeonato (sem link de ranking geral; ranking só dentro de cada card da etapa) --}}
         <div class="flex flex-wrap items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
             <span class="inline-flex items-center gap-2 text-slate-700 font-medium">
                 <i class="fa-solid fa-flag-checkered text-orange-500"></i>
@@ -46,12 +45,6 @@
                 <span class="text-slate-600">
                     <strong>{{ $etapasRealizadas->count() }}</strong> {{ $etapasRealizadas->count() === 1 ? 'realizada' : 'realizadas' }}
                 </span>
-            @endif
-            @if($temRanking)
-                <span class="text-slate-500">·</span>
-                <a href="{{ route('campeonatos.ranking', $campeonato) }}" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white font-bold rounded-lg text-sm transition-colors">
-                    <i class="fa-solid fa-trophy"></i> Ranking geral do campeonato
-                </a>
             @endif
         </div>
 

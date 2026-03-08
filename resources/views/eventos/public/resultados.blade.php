@@ -48,10 +48,6 @@
         </div>
     </section>
 
-    @php
-        $temEquipes = $rankingEquipesEtapa->isNotEmpty();
-    @endphp
-
     <div x-data="{
             activeTab: 'atletas',
             searchTerm: '',
@@ -135,14 +131,12 @@
                                 <i class="fa-solid fa-person-running"></i>
                                 <span>Por Atleta</span>
                             </button>
-                            @if($temEquipes)
-                                <button @click="activeTab = 'equipes'"
-                                        :class="activeTab === 'equipes' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/40 border-transparent' : 'bg-white text-slate-600 border-gray-200 shadow-sm hover:border-orange-300 hover:text-orange-600 hover:bg-orange-50'"
-                                        class="flex-1 md:flex-none px-5 py-2.5 rounded-xl border font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2">
-                                    <i class="fa-solid fa-people-group"></i>
-                                    <span>Por Equipe</span>
-                                </button>
-                            @endif
+                            <button @click="activeTab = 'equipes'"
+                                    :class="activeTab === 'equipes' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/40 border-transparent' : 'bg-white text-slate-600 border-gray-200 shadow-sm hover:border-orange-300 hover:text-orange-600 hover:bg-orange-50'"
+                                    class="flex-1 md:flex-none px-5 py-2.5 rounded-xl border font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-people-group"></i>
+                                <span>Por Equipe</span>
+                            </button>
                         </div>
                         <div class="md:hidden w-full mt-1">
                             <button @click="showFilters = !showFilters"
@@ -177,18 +171,16 @@
                     </div>
 
                     {{-- Filtros aba Equipes --}}
-                    @if($temEquipes)
-                        <div x-show="activeTab === 'equipes' && showFilters"
-                             x-transition
-                             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-gray-100 md:border-none md:pt-0 mt-2 md:mt-0">
-                            <div class="relative lg:col-span-2">
-                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <i class="fa-solid fa-search text-gray-400"></i>
-                                </div>
-                                <input type="text" x-model.debounce.300ms="searchEquipeTab" placeholder="Buscar nome da equipe..." class="block w-full rounded-xl border-gray-300 pl-10 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-slate-50">
+                    <div x-show="activeTab === 'equipes' && showFilters"
+                         x-transition
+                         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-gray-100 md:border-none md:pt-0 mt-2 md:mt-0">
+                        <div class="relative lg:col-span-2">
+                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fa-solid fa-search text-gray-400"></i>
                             </div>
+                            <input type="text" x-model.debounce.300ms="searchEquipeTab" placeholder="Buscar nome da equipe..." class="block w-full rounded-xl border-gray-300 pl-10 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-slate-50">
                         </div>
-                    @endif
+                    </div>
                 </div>
             </div>
         </section>
@@ -197,7 +189,7 @@
         <div class="container mx-auto p-4 md:p-8">
             <div class="max-w-6xl mx-auto mt-8 min-h-[40vh]">
 
-                @if($inscricoes->isEmpty() && !$temEquipes)
+                @if($inscricoes->isEmpty() && $rankingEquipesEtapa->isEmpty())
                     <div class="bg-white rounded-lg shadow-md p-12 text-center text-gray-500">
                         <p>Ainda não há resultados publicados para esta etapa.</p>
                         <a href="{{ route('eventos.public.show', $evento) }}" class="mt-4 inline-flex items-center gap-2 text-orange-600 font-semibold text-sm">
@@ -259,17 +251,17 @@
                         </div>
                     </div>
 
-                    {{-- Conteúdo aba Equipes --}}
-                    @if($temEquipes)
-                        <div x-show="activeTab === 'equipes'" style="display: none;" class="space-y-6">
-                            <div class="border-l-4 border-orange-500 pl-4">
-                                <h2 class="text-3xl font-bold text-slate-800">Ranking por Equipes</h2>
+                    {{-- Conteúdo aba Equipes: total de pontos por equipe --}}
+                    <div x-show="activeTab === 'equipes'" x-cloak class="space-y-6">
+                        <div class="border-l-4 border-orange-500 pl-4">
+                            <h2 class="text-3xl font-bold text-slate-800">Total de pontos por equipe</h2>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-md flex flex-col overflow-hidden">
+                            <div class="bg-gray-50 p-4 border-b flex justify-between items-center">
+                                <h3 class="text-lg font-bold text-slate-700">Ranking por equipes</h3>
+                                <span class="text-xs font-semibold text-gray-600 bg-gray-200 px-3 py-1 rounded-full flex-shrink-0" x-text="filteredEquipes.length + ' equipes'"></span>
                             </div>
-                            <div class="bg-white rounded-lg shadow-md flex flex-col overflow-hidden">
-                                <div class="bg-gray-50 p-4 border-b flex justify-between items-center">
-                                    <h3 class="text-lg font-bold text-slate-700">Pontos por equipe</h3>
-                                    <span class="text-xs font-semibold text-gray-600 bg-gray-200 px-3 py-1 rounded-full flex-shrink-0" x-text="filteredEquipes.length + ' equipes'"></span>
-                                </div>
+                            <template x-if="filteredEquipes.length > 0">
                                 <div class="overflow-x-auto">
                                     <table class="min-w-full table-fixed">
                                         <thead class="bg-gray-50 border-b">
@@ -294,12 +286,12 @@
                                         </tbody>
                                     </table>
                                 </div>
-                            </div>
-                            <div x-show="filteredEquipes.length === 0" class="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
-                                <p>Nenhuma equipe corresponde ao filtro.</p>
+                            </template>
+                            <div x-show="filteredEquipes.length === 0" class="p-8 text-center text-gray-500">
+                                <p x-text="rankingEquipes.length === 0 ? 'Nenhuma equipe com resultado nesta etapa.' : 'Nenhuma equipe corresponde ao filtro.'"></p>
                             </div>
                         </div>
-                    @endif
+                    </div>
                 @endif
             </div>
         </div>

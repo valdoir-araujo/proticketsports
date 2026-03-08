@@ -126,6 +126,9 @@
                 @if (session('cupom_error'))
                     <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-xl">{{ session('cupom_error') }}</div>
                 @endif
+                @if (session('info'))
+                    <div class="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-xl"><i class="fa-solid fa-info-circle text-blue-500 mr-2"></i>{{ session('info') }}</div>
+                @endif
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {{-- COLUNA 1: Conteúdo principal --}}

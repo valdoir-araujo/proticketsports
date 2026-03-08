@@ -42,7 +42,7 @@
                     <div class="flex justify-between items-center">
                         <span class="text-gray-500">Status:</span>
                         <span class="px-3 py-1 text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            <i class="fa-solid fa-check mr-1"></i> Confirmada
+                            <i class="fa-solid fa-check mr-1"></i> {{ $inscricao->status === 'confirmada' ? 'Confirmada' : $inscricao->status }}
                         </span>
                     </div>
                 </div>

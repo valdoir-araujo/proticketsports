@@ -90,7 +90,7 @@
                                     </button>
                                 </div>
                             </div>
-                            <a href="{{ route('pagamento.sucesso', $inscricao) }}" class="text-sm text-blue-600 hover:underline">Já realizei o pagamento</a>
+                            <p class="text-sm text-slate-600">Após pagar, a confirmação é automática pelo Mercado Pago. Acompanhe o status em <a href="{{ route('atleta.inscricoes') }}" class="text-blue-600 hover:underline font-medium">Minhas Inscrições</a>.</p>
                         </div>
                     </div>
                 </div>

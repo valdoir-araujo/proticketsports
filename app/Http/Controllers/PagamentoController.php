@@ -300,12 +300,17 @@ class PagamentoController extends Controller
     }
 
     /**
-     * Mostra a página de sucesso após um pagamento.
+     * Mostra a página de sucesso apenas quando a inscrição está realmente confirmada (webhook MP).
+     * Se o atleta acessar sem ter o pagamento confirmado, redireciona para a inscrição.
      */
-    public function sucesso(Inscricao $inscricao): View
+    public function sucesso(Inscricao $inscricao): View|RedirectResponse
     {
         if ($inscricao->atleta->user_id !== auth()->id()) {
             abort(403);
+        }
+        if ($inscricao->status !== 'confirmada') {
+            return redirect()->route('inscricao.show', $inscricao)
+                ->with('info', 'Aguardando confirmação do pagamento pelo Mercado Pago. Acompanhe o status nesta página ou em Minhas Inscrições.');
         }
         return view('pagamento.sucesso', compact('inscricao'));
     }

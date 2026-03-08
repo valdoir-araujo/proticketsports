@@ -133,6 +133,32 @@ class CampeonatoPublicoController extends Controller
             ->groupBy('equipe_id')
             ->map(fn ($g) => $g->keyBy('evento_id')->map(fn ($r) => (int) $r->pontos));
 
-        return view('campeonatos.ranking', compact('campeonato', 'etapas', 'rankingAtletas', 'rankingEquipes', 'pontosAtletaPorEtapa', 'pontosEquipePorEtapa'));
+        $etapasParaRanking = $etapas->map(fn ($e, $i) => ['id' => $e->id, 'numero' => str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT)]);
+
+        $rankingAtletasParaJs = $rankingAtletas->map(function ($r) use ($pontosAtletaPorEtapa) {
+            $pontos = $pontosAtletaPorEtapa->get($r->atleta_id);
+            return [
+                'atleta_id' => $r->atleta_id,
+                'nome_atleta' => $r->nome_atleta,
+                'total_pontos' => (int) $r->total_pontos,
+                'pontos_por_etapa' => $pontos ? $pontos->all() : [],
+            ];
+        })->values();
+
+        $rankingEquipesParaJs = $rankingEquipes->map(function ($r) use ($pontosEquipePorEtapa) {
+            $pontos = $pontosEquipePorEtapa->get($r->equipe_id);
+            return [
+                'equipe_id' => $r->equipe_id,
+                'nome_equipe' => $r->nome_equipe,
+                'total_pontos' => (int) $r->total_pontos,
+                'pontos_por_etapa' => $pontos ? $pontos->all() : [],
+            ];
+        })->values();
+
+        return view('campeonatos.ranking', compact(
+            'campeonato', 'etapas', 'rankingAtletas', 'rankingEquipes',
+            'pontosAtletaPorEtapa', 'pontosEquipePorEtapa',
+            'etapasParaRanking', 'rankingAtletasParaJs', 'rankingEquipesParaJs'
+        ));
     }
 }

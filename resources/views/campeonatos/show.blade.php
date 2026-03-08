@@ -49,8 +49,8 @@
             @endif
             @if($temRanking)
                 <span class="text-slate-500">·</span>
-                <a href="{{ route('campeonatos.ranking', $campeonato) }}" class="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg text-sm transition-colors">
-                    <i class="fa-solid fa-medal"></i> Ver ranking completo (resultados)
+                <a href="{{ route('campeonatos.ranking', $campeonato) }}" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white font-bold rounded-lg text-sm transition-colors">
+                    <i class="fa-solid fa-trophy"></i> Ranking geral do campeonato
                 </a>
             @endif
         </div>
@@ -105,11 +105,11 @@
                                         <i class="fa-solid fa-list"></i> Inscritos
                                     </a>
                                     @if($jaRealizada)
-                                        <a href="{{ route('eventos.public.resultados', $evento) }}" class="inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-indigo-300 text-indigo-700 font-medium rounded-lg text-sm hover:bg-indigo-50 transition-colors">
-                                            <i class="fa-solid fa-stopwatch"></i> Ver resultados
+                                        <a href="{{ route('eventos.public.resultados', $evento) }}" class="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg text-sm transition-colors">
+                                            <i class="fa-solid fa-medal"></i> Ver ranking da etapa
                                         </a>
                                     @endif
-                                    <a href="{{ route('eventos.public.show', $evento) }}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg text-sm transition-colors">
+                                    <a href="{{ route('eventos.public.show', $evento) }}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-300 text-slate-700 font-bold rounded-lg text-sm hover:bg-slate-50 transition-colors">
                                         Ver evento <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
                                     </a>
                                 </div>
@@ -124,21 +124,6 @@
                 </div>
             @endif
         </section>
-
-        {{-- Link para ranking (lista em página separada com abas Atletas / Equipes) --}}
-        @if($rankingAtletas->isNotEmpty() || $rankingEquipes->isNotEmpty())
-            <section class="bg-slate-50 rounded-xl border border-slate-200 p-6">
-                <h2 class="text-xl font-black text-slate-900 mb-2 flex items-center gap-2">
-                    <i class="fa-solid fa-trophy text-amber-500"></i>
-                    Ranking do campeonato
-                </h2>
-                <p class="text-sm text-slate-600 mb-4">Pontuação por etapa e total. Veja o ranking completo por atletas e por equipes em uma página dedicada.</p>
-                <a href="{{ route('campeonatos.ranking', $campeonato) }}" class="inline-flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg text-sm transition-colors">
-                    <i class="fa-solid fa-medal"></i> Ver ranking completo (por atleta e por equipe)
-                    <i class="fa-solid fa-arrow-right text-xs"></i>
-                </a>
-            </section>
-        @endif
 
         {{-- Regulamento --}}
         @if($campeonato->regulamento_url)

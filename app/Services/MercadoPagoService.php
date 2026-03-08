@@ -10,8 +10,7 @@ use MercadoPago\Client\Payment\PaymentClient;
 use MercadoPago\Client\Preference\PreferenceClient;
 use MercadoPago\Exceptions\MPApiException;
 use MercadoPago\MercadoPagoConfig;
-use GuzzleHttp\Client as GuzzleClient;
-use MercadoPago\Net\MPSRequestOptions; // Importante para os Headers
+use MercadoPago\Client\Common\RequestOptions;
 
 class MercadoPagoService implements PaymentGatewayInterface
 {
@@ -121,7 +120,7 @@ class MercadoPagoService implements PaymentGatewayInterface
                 'payer' => $payerData,
                 'external_reference' => (string) $inscricao->id,
             ];
-            $requestOptions = new MPSRequestOptions();
+            $requestOptions = new RequestOptions();
             $requestOptions->setCustomHeaders(['X-Idempotency-Key: inscricao_pix_' . $inscricao->id . '_' . uniqid('', true)]);
             $payment = $client->create($paymentRequest, $requestOptions);
             if ($payment->status === 'approved') {
@@ -183,14 +182,12 @@ class MercadoPagoService implements PaymentGatewayInterface
                 ]
             ];
 
-            // 🛡️ ADICIONADO: Configuração de Headers (Device ID)
-            // Isso resolve a pendência "Identificador do dispositivo" no painel
-            $request_options = new MPSRequestOptions();
-            $request_options->setCustomHeaders([
-                "X-Meli-Session-Id" => $data['device_id'] ?? null
-            ]);
-            
-            // 2. Cria o pagamento enviando os headers customizados
+            $headers = ['X-Idempotency-Key: inscricao_card_' . $inscricao->id . '_' . uniqid('', true)];
+            if (!empty($data['device_id'])) {
+                $headers[] = 'X-Meli-Session-Id: ' . $data['device_id'];
+            }
+            $request_options = new RequestOptions();
+            $request_options->setCustomHeaders($headers);
             $payment = $client->create($payment_request, $request_options);
 
             if ($payment->status === 'approved') {

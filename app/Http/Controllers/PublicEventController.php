@@ -138,7 +138,7 @@ class PublicEventController extends Controller
         $inscricoes = Inscricao::query()
             ->where('inscricoes.evento_id', $evento->id)
             ->where('inscricoes.status', 'confirmada')
-            ->with(['atleta.user', 'atleta.equipe', 'categoria.percurso', 'resultado'])
+            ->with(['atleta.user', 'atleta.equipe', 'equipe', 'categoria.percurso', 'resultado'])
             ->join('categorias', 'inscricoes.categoria_id', '=', 'categorias.id')
             ->join('percursos', 'categorias.percurso_id', '=', 'percursos.id')
             ->orderBy('percursos.id')
@@ -147,16 +147,20 @@ class PublicEventController extends Controller
             ->limit(3000)
             ->get();
 
-        $rankingEquipesEtapa = $inscricoes
-            ->whereNotNull('resultado')
-            ->whereNotNull('atleta.equipe_id')
-            ->groupBy('atleta.equipe_id')
+        // Pontuação do evento: só considera equipe da INSCRIÇÃO (inscricao.equipe_id). Se não tiver na inscrição, não soma em nenhuma equipe.
+        $inscricoesComResultado = $inscricoes->whereNotNull('resultado');
+        $rankingEquipesEtapa = $inscricoesComResultado
+            ->filter(fn ($inscricao) => $inscricao->equipe_id !== null)
+            ->groupBy('equipe_id')
             ->map(function ($inscricoesDaEquipe) {
-                $equipe = $inscricoesDaEquipe->first()->atleta->equipe;
+                $equipe = $inscricoesDaEquipe->first()->equipe;
                 if (!$equipe) {
                     return null;
                 }
-                return ['equipe' => $equipe, 'pontos_totais' => $inscricoesDaEquipe->sum('resultado.pontos_etapa')];
+                return [
+                    'equipe' => $equipe,
+                    'pontos_totais' => $inscricoesDaEquipe->sum(fn ($i) => $i->resultado?->pontos_etapa ?? 0),
+                ];
             })
             ->filter()
             ->sortByDesc('pontos_totais')

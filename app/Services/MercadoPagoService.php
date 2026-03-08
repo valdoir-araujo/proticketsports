@@ -15,23 +15,35 @@ use MercadoPago\Net\MPSRequestOptions; // Importante para os Headers
 
 class MercadoPagoService implements PaymentGatewayInterface
 {
+    private ?string $token = null;
+
     public function __construct()
     {
-        $token = config('services.mercadopago.token');
+        $token = config('services.mercadopago.access_token') ?: config('services.mercadopago.token');
 
         if (empty($token)) {
             $token = env('MERCADOPAGO_ACCESS_TOKEN') ?? env('MERCADOPAGO_TOKEN');
         }
 
-        if (empty($token) || !is_string($token)) {
-            Log::critical("Falha ao carregar Token MP.");
-            throw new \Exception("ERRO CRÍTICO: Token do Mercado Pago não encontrado.");
+        if (!empty($token) && is_string($token)) {
+            $this->token = $token;
+            MercadoPagoConfig::setAccessToken($token);
+            if (app()->environment('local')) {
+                MercadoPagoConfig::setRuntimeEnviroment(MercadoPagoConfig::LOCAL);
+            }
+        } else {
+            Log::warning('Token do Mercado Pago não configurado. Configure MERCADOPAGO_ACCESS_TOKEN ou MERCADOPAGO_TOKEN no .env do servidor para habilitar pagamentos.');
         }
+    }
 
-        MercadoPagoConfig::setAccessToken($token);
-
-        if (app()->environment('local')) {
-            MercadoPagoConfig::setRuntimeEnviroment(MercadoPagoConfig::LOCAL);
+    /**
+     * Garante que o token está configurado antes de chamar a API. Evita quebrar o site quando o token não está no .env (ex.: hospedagem).
+     */
+    private function ensureToken(): void
+    {
+        if (empty($this->token)) {
+            Log::critical('Tentativa de uso do Mercado Pago sem token configurado.');
+            throw new \Exception('Pagamento não está configurado. Entre em contato com o organizador do evento.');
         }
     }
 
@@ -40,6 +52,7 @@ class MercadoPagoService implements PaymentGatewayInterface
      */
     public function createPreference(Inscricao $inscricao): string
     {
+        $this->ensureToken();
         try {
             $client = new PreferenceClient();
             $baseUrl = rtrim(config('app.url'), '/');
@@ -89,6 +102,7 @@ class MercadoPagoService implements PaymentGatewayInterface
      */
     public function processPayment(array $data, Inscricao $inscricao): array
     {
+        $this->ensureToken();
         try {
             $payerDocument = preg_replace('/[^0-9]/', '', $data['payer']['identification']['number'] ?? '');
             $client = new PaymentClient();
@@ -216,6 +230,10 @@ class MercadoPagoService implements PaymentGatewayInterface
 
     public function handleWebhook(Request $request)
     {
+        if (empty($this->token)) {
+            Log::warning('Webhook MP ignorado: token não configurado.');
+            return null;
+        }
         $paymentId = $request->query('id') ?? $request->input('data.id');
         if (!$paymentId) return null;
 

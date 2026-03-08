@@ -331,8 +331,11 @@ class MercadoPagoService implements PaymentGatewayInterface
             return false;
         }
 
-        $dataId = $request->query('data.id') ?? $request->input('data.id');
-        if ($dataId !== null && is_string($dataId) && preg_match('/^[a-zA-Z0-9]+$/', $dataId)) {
+        // data.id pode vir na query string (?data.id=xxx) ou no body JSON (data.id ou data[id])
+        $dataId = $request->query('data.id')
+            ?? $request->input('data.id')
+            ?? (is_array($request->input('data')) ? ($request->input('data')['id'] ?? null) : null);
+        if ($dataId !== null && is_string($dataId) && preg_match('/^[a-zA-Z0-9_-]+$/', $dataId)) {
             $dataId = strtolower($dataId);
         }
         $dataId = $dataId ?? '';
@@ -347,7 +350,7 @@ class MercadoPagoService implements PaymentGatewayInterface
         $calculated = hash_hmac('sha256', $manifest, $secret);
         $valid = hash_equals($calculated, $hash);
         if (!$valid) {
-            Log::warning('Webhook MP: assinatura inválida.');
+            Log::warning('Webhook MP: assinatura inválida. Verifique MERCADOPAGO_WEBHOOK_SECRET no .env (copie de novo em Suas integrações > Webhooks, sem espaços).');
         }
         return $valid;
     }

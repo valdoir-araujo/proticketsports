@@ -96,7 +96,61 @@ class MercadoPagoService implements PaymentGatewayInterface
             throw new \Exception("Erro ao gerar link de pagamento.");
         }
     }
-    
+
+    /**
+     * Cria um pagamento PIX para a inscrição (mesma regra da loja: backend gera e retorna QR).
+     */
+    public function createPixPayment(Inscricao $inscricao): array
+    {
+        $this->ensureToken();
+        try {
+            $client = new PaymentClient();
+            $user = $inscricao->atleta->user;
+            $payerData = [
+                'email' => $user->email,
+                'first_name' => substr($user->name, 0, 100),
+            ];
+            $cpf = preg_replace('/\D/', '', (string) ($inscricao->atleta->cpf ?? ''));
+            if ($cpf !== '') {
+                $payerData['identification'] = ['type' => 'CPF', 'number' => $cpf];
+            }
+            $paymentRequest = [
+                'transaction_amount' => (float) number_format($inscricao->valor_pago, 2, '.', ''),
+                'description' => 'Inscrição #' . $inscricao->id . ' - ' . substr($inscricao->evento->nome, 0, 200),
+                'payment_method_id' => 'pix',
+                'payer' => $payerData,
+                'external_reference' => (string) $inscricao->id,
+            ];
+            $requestOptions = new MPSRequestOptions();
+            $requestOptions->setCustomHeaders(['X-Idempotency-Key: inscricao_pix_' . $inscricao->id . '_' . uniqid('', true)]);
+            $payment = $client->create($paymentRequest, $requestOptions);
+            if ($payment->status === 'approved') {
+                return [
+                    'status' => 'approved',
+                    'payment_id' => (string) $payment->id,
+                ];
+            }
+            if ($payment->status === 'pending' || $payment->status === 'in_process') {
+                $poi = $payment->point_of_interaction ?? null;
+                $txData = $poi->transaction_data ?? null;
+                return [
+                    'status' => 'pending',
+                    'payment_id' => (string) $payment->id,
+                    'qr_code' => $txData->qr_code ?? '',
+                    'qr_code_base64' => $txData->qr_code_base64 ?? '',
+                ];
+            }
+            throw new \Exception($payment->status_detail ?? 'Pagamento não aprovado.');
+        } catch (MPApiException $e) {
+            $content = $e->getApiResponse()->getContent();
+            Log::error('MercadoPagoService PIX Error: ' . json_encode($content));
+            throw new \Exception($content['message'] ?? 'Erro ao gerar PIX.');
+        } catch (\Exception $e) {
+            Log::error('MercadoPagoService PIX: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
     /**
      * Processa os dados de pagamento recebidos do Brick.
      */

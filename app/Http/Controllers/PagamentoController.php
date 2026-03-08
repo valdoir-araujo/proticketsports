@@ -128,9 +128,32 @@ class PagamentoController extends Controller
             return response()->json(['status' => 'success', 'redirect_url' => route('pagamento.sucesso', $inscricao)]);
         }
 
-        // 2. Processamento com Tratamento de Erros
+        // 2. PIX: criar pagamento no backend e retornar QR (mesma regra da loja)
+        $paymentMethodId = $request->input('payment_method_id') ?? $request->input('paymentMethodId');
+        if (strtolower((string) $paymentMethodId) === 'pix') {
+            try {
+                $resultado = $paymentGateway->createPixPayment($inscricao);
+                if ($resultado['status'] === 'approved') {
+                    return response()->json([
+                        'status' => 'success',
+                        'payment_id' => $resultado['payment_id'] ?? null,
+                        'redirect_url' => route('pagamento.sucesso', $inscricao),
+                    ]);
+                }
+                return response()->json([
+                    'status' => $resultado['status'],
+                    'payment_id' => $resultado['payment_id'] ?? null,
+                    'qr_code' => $resultado['qr_code'] ?? '',
+                    'qr_code_base64' => $resultado['qr_code_base64'] ?? '',
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Erro PIX Inscrição: ' . $e->getMessage());
+                return response()->json(['status' => 'error', 'message' => $e->getMessage()], 400);
+            }
+        }
+
+        // 3. Cartão: processamento via Brick
         try {
-            // Processa no Gateway (Service)
             $resultado = $paymentGateway->processPayment($request->all(), $inscricao);
 
             if ($resultado['status'] === 'success') {

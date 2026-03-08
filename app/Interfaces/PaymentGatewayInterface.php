@@ -14,6 +14,12 @@ interface PaymentGatewayInterface
     public function createPreference(Inscricao $inscricao): string;
 
     /**
+     * Cria um pagamento PIX e retorna o QR Code (mesma regra da loja).
+     * Retorna array com status, payment_id, qr_code, qr_code_base64.
+     */
+    public function createPixPayment(Inscricao $inscricao): array;
+
+    /**
      * Processa os dados de pagamento recebidos do Brick.
      * Usado para finalizar a transação via AJAX.
      */

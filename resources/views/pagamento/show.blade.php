@@ -66,7 +66,7 @@
             @endif
 
             {{-- Estrutura de Colunas --}}
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8" x-data="{ tab: 'pix', processing: false }">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8" x-data="pagamentoInscricaoData({ processUrl: @json(route('pagamento.process', $inscricao)), csrfToken: @json(csrf_token()) })">
                 
                 {{-- COLUNA 1: Resumo do Pedido --}}
                 <div class="lg:col-span-1 order-2 lg:order-1">
@@ -189,17 +189,42 @@
                                     </div>
                                 </div>
 
-                                {{-- Aba Pix --}}
+                                {{-- Aba PIX (mesma regra da loja: botão gera QR no backend) --}}
                                 <div x-show="tab === 'pix'" x-cloak x-transition:enter="transition ease-out duration-300">
-                                    <div class="text-center mb-8 p-6 bg-green-50 rounded-xl border border-green-100">
+                                    <div class="text-center mb-6 p-6 bg-green-50 rounded-xl border border-green-100">
                                         <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl shadow-sm">
                                             <i class="fa-solid fa-bolt"></i>
                                         </div>
                                         <h3 class="font-bold text-green-800 text-lg mb-1">Pagamento Instantâneo</h3>
                                         <p class="text-sm text-green-700 max-w-sm mx-auto">Seu pagamento é aprovado na hora. Basta apontar a câmera ou copiar o código.</p>
                                     </div>
-                                    <div id="pixPaymentBrick_container">
-                                        <div class="text-center py-4 text-gray-400 text-sm italic">Gerando código PIX...</div>
+                                    <div x-show="!pixQrBase64" class="text-center py-6">
+                                        <button type="button" @click="generatePix()" :disabled="pixLoading"
+                                            class="w-full md:w-auto px-10 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg shadow-green-200 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3 mx-auto disabled:opacity-70 disabled:cursor-not-allowed text-lg">
+                                            <span x-show="!pixLoading">Gerar QR Code PIX</span>
+                                            <span x-show="pixLoading" class="flex items-center gap-2">
+                                                <i class="fa-solid fa-circle-notch fa-spin"></i> Gerando...
+                                            </span>
+                                        </button>
+                                        <p x-show="pixError" x-text="pixError" class="mt-4 text-sm text-red-600 font-medium"></p>
+                                    </div>
+                                    <div x-show="pixQrBase64" class="bg-white rounded-xl border border-slate-200 p-8 text-center" style="display: none;">
+                                        <div class="bg-green-50 text-green-800 px-4 py-2 rounded-lg mb-6 inline-flex items-center gap-2 border border-green-200 text-sm font-bold">
+                                            <i class="fa-regular fa-clock"></i> Aguardando pagamento...
+                                        </div>
+                                        <div class="mb-6 flex justify-center">
+                                            <img :src="'data:image/png;base64,' + pixQrBase64" class="w-64 h-64 rounded-lg object-contain border-2 border-slate-100" alt="QR Code PIX">
+                                        </div>
+                                        <div class="max-w-md mx-auto mb-6">
+                                            <label class="text-xs font-bold text-slate-400 uppercase mb-2 block tracking-wide">PIX Copia e Cola</label>
+                                            <div class="flex shadow-sm">
+                                                <input type="text" x-model="pixQrCode" readonly class="w-full bg-slate-50 border border-slate-200 text-slate-600 text-xs p-3 rounded-l-lg font-mono focus:outline-none">
+                                                <button type="button" @click="copyPixCode()" class="bg-slate-800 text-white px-5 rounded-r-lg font-bold text-xs hover:bg-slate-900 transition-colors flex items-center gap-2">
+                                                    <i class="fa-regular fa-copy"></i> <span x-text="pixCopied ? 'Copiado!' : 'Copiar'"></span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <a href="{{ route('pagamento.sucesso', $inscricao) }}" class="text-sm text-indigo-600 hover:underline font-medium">Já realizei o pagamento</a>
                                     </div>
                                 </div>
 
@@ -238,12 +263,59 @@
         </div>
     </div>
 
-    {{-- SCRIPTS (Movidos para o corpo principal para garantir execução) --}}
+    {{-- SCRIPTS --}}
     <script src="https://sdk.mercadopago.com/js/v2"></script>
     <script>
+        function pagamentoInscricaoData(config) {
+            return {
+                tab: 'pix',
+                processing: false,
+                processUrl: config.processUrl || '',
+                csrfToken: config.csrfToken || '',
+                pixLoading: false,
+                pixQrBase64: '',
+                pixQrCode: '',
+                pixCopied: false,
+                pixError: '',
+                generatePix() {
+                    this.pixLoading = true;
+                    this.pixError = '';
+                    fetch(this.processUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrfToken, 'Accept': 'application/json' },
+                        body: JSON.stringify({ payment_method_id: 'pix', payer: { email: @json($inscricao->atleta->user->email ?? '') } })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        this.pixLoading = false;
+                        if (data.status === 'success' && data.redirect_url) {
+                            window.location.href = data.redirect_url;
+                            return;
+                        }
+                        if (data.qr_code_base64) {
+                            this.pixQrBase64 = data.qr_code_base64;
+                            this.pixQrCode = data.qr_code || '';
+                        } else {
+                            this.pixError = data.message || 'Erro ao gerar PIX. Tente novamente.';
+                        }
+                    })
+                    .catch(err => {
+                        this.pixLoading = false;
+                        this.pixError = 'Erro de conexão. Tente novamente.';
+                    });
+                },
+                copyPixCode() {
+                    if (!this.pixQrCode) return;
+                    navigator.clipboard.writeText(this.pixQrCode).then(() => {
+                        this.pixCopied = true;
+                        setTimeout(() => { this.pixCopied = false; }, 2000);
+                    });
+                }
+            };
+        }
+    </script>
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('Iniciando Mercado Pago...');
-            
             const publicKey = @json($publicKey ?? '');
             const preferenceId = @json($preferenceId ?? '');
 
@@ -251,102 +323,54 @@
                 const mp = new MercadoPago(publicKey, { locale: 'pt-BR' });
                 const bricksBuilder = mp.bricks();
 
-                // Helper de Erro
                 const showError = (msg) => {
                     const el = document.getElementById('paymentError');
-                    el.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${msg}`;
-                    el.classList.remove('hidden');
-                    setTimeout(() => el.classList.add('hidden'), 8000);
+                    if (el) { el.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${msg}`; el.classList.remove('hidden'); }
+                    setTimeout(() => el && el.classList.add('hidden'), 8000);
                 };
 
                 const renderStatusScreenBrick = async (paymentId) => {
-                    document.getElementById('payment-form-container').style.display = 'none';
+                    const container = document.getElementById('payment-form-container');
+                    if (container) container.style.display = 'none';
                     const settings = {
                         initialization: { paymentId: paymentId },
                         callbacks: {
-                            onReady: () => {
-                                document.getElementById('statusScreenBrick_container').scrollIntoView({ behavior: 'smooth' });
-                            },
+                            onReady: () => { document.getElementById('statusScreenBrick_container')?.scrollIntoView({ behavior: 'smooth' }); },
                             onError: (error) => console.error(error),
                         },
                     };
-                    window.statusScreenBrickController = await bricksBuilder.create('statusScreen', 'statusScreenBrick_container', settings);
+                    await bricksBuilder.create('statusScreen', 'statusScreenBrick_container', settings);
                 };
 
-                // --- CARTÃO ---
                 bricksBuilder.create("cardPayment", "cardPaymentBrick_container", {
                     initialization: {
                         amount: @json((float) $inscricao->valor_pago),
                         preferenceId: preferenceId,
                     },
-                    customization: { 
-                        visual: { 
-                            style: { theme: 'bootstrap' }, 
-                            hideFormTitle: true 
-                        },
-                        paymentMethods: { maxInstallments: 6 } 
-                    },
+                    customization: { visual: { style: { theme: 'bootstrap' }, hideFormTitle: true }, paymentMethods: { maxInstallments: 6 } },
                     callbacks: {
-                        onReady: () => {
-                            console.log('Brick Cartão Pronto');
-                        },
+                        onReady: () => {},
                         onSubmit: (cardFormData) => {
-                            const alpineComponent = document.querySelector('[x-data]');
-                            if(alpineComponent) alpineComponent.__x.$data.processing = true;
-                            document.getElementById('paymentError').classList.add('hidden');
-
-                            return new Promise((resolve, reject) => {
-                                fetch(@json(route('pagamento.process', $inscricao)), {
-                                    method: "POST",
-                                    headers: {
-                                        "Content-Type": "application/json",
-                                        "X-CSRF-TOKEN": @json(csrf_token())
-                                    },
-                                    body: JSON.stringify(cardFormData),
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if(alpineComponent) alpineComponent.__x.$data.processing = false;
-                                    if (data.payment_id) {
-                                        renderStatusScreenBrick(data.payment_id);
-                                        resolve();
-                                    } else {
-                                        showError(data.message || 'Pagamento recusado.');
-                                        reject();
-                                    }
-                                })
-                                .catch((err) => {
-                                    if(alpineComponent) alpineComponent.__x.$data.processing = false;
-                                    showError('Erro de conexão.');
-                                    reject();
-                                });
-                            });
+                            const root = document.querySelector('[x-data]');
+                            if (root && root.__x) root.__x.$data.processing = true;
+                            document.getElementById('paymentError')?.classList.add('hidden');
+                            return fetch(@json(route('pagamento.process', $inscricao)), {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": @json(csrf_token()) },
+                                body: JSON.stringify(cardFormData),
+                            })
+                            .then(r => r.json())
+                            .then(data => {
+                                if (root && root.__x) root.__x.$data.processing = false;
+                                if (data.payment_id) { renderStatusScreenBrick(data.payment_id); return; }
+                                showError(data.message || 'Pagamento recusado.');
+                                throw new Error(data.message);
+                            })
+                            .catch(err => { if (root && root.__x) root.__x.$data.processing = false; showError('Erro de conexão.'); throw err; });
                         },
-                        onError: (error) => { console.error('Erro Cartão:', error); },
+                        onError: (error) => console.error('Erro Cartão:', error),
                     },
                 });
-
-                // --- PIX ---
-                bricksBuilder.create("pix", "pixPaymentBrick_container", {
-                    initialization: {
-                        amount: @json((float) $inscricao->valor_pago),
-                        preferenceId: preferenceId,
-                    },
-                    customization: {
-                        visual: { 
-                            hideFormTitle: true,
-                            style: { theme: 'bootstrap' }
-                        }
-                    },
-                    callbacks: {
-                        onReady: () => {
-                             console.log('Brick PIX Pronto');
-                        },
-                        onError: (error) => { console.error('Erro PIX:', error); },
-                    },
-                });
-            } else {
-                console.error('Mercado Pago Credenciais faltando.');
             }
         });
     </script>

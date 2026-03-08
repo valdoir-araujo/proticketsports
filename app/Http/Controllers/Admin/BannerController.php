@@ -39,14 +39,17 @@ class BannerController extends Controller
             'subtitulo' => 'nullable|string|max:255',
             'link_url' => 'nullable|url',
             'imagem' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'ativo' => 'required|boolean',
+            'ativo' => 'nullable',
         ]);
+
+        $dadosValidados['ativo'] = $request->boolean('ativo');
 
         if ($request->hasFile('imagem')) {
             $path = $request->file('imagem')->store('banners', 'public');
             $dadosValidados['imagem_url'] = $path;
         }
-        
+        unset($dadosValidados['imagem']);
+
         Banner::create($dadosValidados);
 
         return redirect()->route('admin.banners.index')->with('sucesso', 'Banner criado com sucesso!');
@@ -69,11 +72,12 @@ class BannerController extends Controller
             'titulo' => 'required|string|max:255',
             'subtitulo' => 'nullable|string|max:255',
             'link_url' => 'nullable|url',
-            'imagem' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048', // Imagem é opcional na atualização
-            'ativo' => 'required|boolean',
+            'imagem' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'ativo' => 'nullable',
         ]);
 
-        // Lógica para atualizar a imagem
+        $dadosValidados['ativo'] = $request->boolean('ativo');
+
         if ($request->hasFile('imagem')) {
             // Apaga a imagem antiga
             if ($banner->imagem_url) {
@@ -83,7 +87,8 @@ class BannerController extends Controller
             $path = $request->file('imagem')->store('banners', 'public');
             $dadosValidados['imagem_url'] = $path;
         }
-        
+        unset($dadosValidados['imagem']);
+
         $banner->update($dadosValidados);
 
         return redirect()->route('admin.banners.index')->with('sucesso', 'Banner atualizado com sucesso!');

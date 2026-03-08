@@ -102,11 +102,23 @@ php artisan migrate --force
 
 O `--force` é necessário em produção (Hostinger). Se aparecer "Nothing to migrate", está tudo certo.
 
-### 2. Link da pasta storage (para fotos de perfil, uploads)
-Se ainda não rodou ou se deu erro de "storage link":
+### 2. Link da pasta storage (banners, fotos de perfil, uploads)
+**Sem isso, imagens enviadas no admin (banners, etc.) não aparecem no site.** O Laravel salva em `storage/app/public` e o link em `public/storage` aponta para lá.
 
 ```bash
 php artisan storage:link
+```
+
+Se der erro "File exists", o link já existe; se mesmo assim as imagens não aparecem, apague o link e crie de novo (no painel ou SSH):
+```bash
+# Se estiver na pasta do projeto (onde está o artisan):
+rm -f public/storage
+php artisan storage:link
+```
+
+**Permissões:** a pasta `storage/app/public` (e dentro dela `banners`, `atletas/fotos`, etc.) precisa ser gravável pelo servidor web. No SSH:
+```bash
+chmod -R 775 storage bootstrap/cache
 ```
 
 ### 3. Limpar cache (recomendado após mudar .env ou config)

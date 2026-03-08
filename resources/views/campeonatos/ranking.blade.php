@@ -41,7 +41,7 @@
              selectedCategory: '',
              etapas: {{ Js::from($etapasParaRanking) }},
              gruposAtletas: {{ Js::from($gruposAtletas) }},
-             gruposEquipes: {{ Js::from($gruposEquipes) }},
+             rankingEquipesFlat: {{ Js::from($rankingEquipesFlat) }},
              categoriasParaFiltro: {{ Js::from($categoriasParaFiltro) }},
              showFilters: window.innerWidth >= 768,
 
@@ -58,10 +58,10 @@
                  const t = this.searchTerm.toLowerCase();
                  return (atletas || []).filter(a => (a.nome || '').toLowerCase().includes(t));
              },
-             equipesFiltradas(equipes) {
-                 if (!this.searchEquipeTab) return equipes || [];
+             get equipesFiltradas() {
+                 if (!this.searchEquipeTab) return this.rankingEquipesFlat || [];
                  const t = this.searchEquipeTab.toLowerCase();
-                 return (equipes || []).filter(e => (e.nome || '').toLowerCase().includes(t));
+                 return (this.rankingEquipesFlat || []).filter(e => (e.nome || '').toLowerCase().includes(t));
              },
              pontosEtapa(item, eventoId) {
                  const p = item.pontos_por_etapa || {};
@@ -189,54 +189,49 @@
                 </template>
             </div>
 
-            {{-- Aba Equipes: por percurso e categoria --}}
-            <div x-show="activeTab === 'equipes'" x-cloak class="space-y-12">
-                <template x-for="percurso in gruposEquipes" :key="percurso.percurso_id">
-                    <div x-show="percursoVisivel(percurso)" class="space-y-6">
-                        <div class="border-l-4 border-orange-500 pl-4">
-                            <h2 class="text-3xl font-bold text-slate-800" x-text="'Percurso - ' + percurso.percurso_desc"></h2>
-                        </div>
-                        <template x-for="categoria in percurso.categorias" :key="categoria.categoria_id">
-                            <div x-show="categoriaVisivel(categoria)" class="bg-white rounded-lg shadow-md flex flex-col overflow-hidden">
-                                <div class="bg-gray-50 p-4 border-b flex justify-between items-center">
-                                    <h3 class="text-lg font-bold text-slate-700" x-text="categoria.categoria_label"></h3>
-                                    <span class="text-xs font-semibold text-gray-600 bg-gray-200 px-3 py-1 rounded-full" x-text="equipesFiltradas(categoria.atletas).length + ' equipes'"></span>
-                                </div>
-                                <template x-if="equipesFiltradas(categoria.atletas).length > 0">
-                                    <div class="overflow-x-auto">
-                                        <table class="min-w-full table-fixed">
-                                            <thead class="bg-gray-50 border-b">
-                                                <tr>
-                                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-16">#</th>
-                                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider min-w-[180px]">Equipe</th>
-                                                    <template x-for="etapa in etapas" :key="etapa.id">
-                                                        <th class="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap" x-text="'Etapa ' + etapa.numero"></th>
-                                                    </template>
-                                                    <th class="px-6 py-3 text-right text-xs font-bold text-orange-600 uppercase tracking-wider w-24 whitespace-nowrap bg-orange-50">Total</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-gray-200">
-                                                <template x-for="(item, index) in equipesFiltradas(categoria.atletas)" :key="item.id">
-                                                    <tr class="hover:bg-orange-50/50 transition-colors" :class="index % 2 !== 0 ? 'bg-slate-50' : 'bg-white'">
-                                                        <td class="px-6 py-3 font-bold text-slate-700" x-text="(index + 1) + 'º'"></td>
-                                                        <td class="px-6 py-3 font-medium text-slate-900 truncate" x-text="formatName(item.nome) || '—'"></td>
-                                                        <template x-for="etapa in etapas" :key="etapa.id">
-                                                            <td class="px-4 py-3 text-center text-gray-600" x-text="pontosEtapa(item, etapa.id)"></td>
-                                                        </template>
-                                                        <td class="px-6 py-3 text-right font-bold text-orange-600 bg-orange-50/80" x-text="item.total_pontos"></td>
-                                                    </tr>
-                                                </template>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </template>
-                                <div x-show="equipesFiltradas(categoria.atletas).length === 0" class="p-6 text-center text-gray-500">
-                                    <p x-text="(categoria.atletas || []).length === 0 ? 'Nenhum resultado nesta categoria.' : 'Nenhuma equipe corresponde ao filtro.'"></p>
-                                </div>
-                            </div>
-                        </template>
+            {{-- Aba Equipes: totalização de pontos dos atletas inscritos na equipe (uma tabela única) --}}
+            <div x-show="activeTab === 'equipes'" x-cloak class="space-y-6">
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h2 class="text-2xl font-bold text-slate-800">Pontuação por etapa e total</h2>
+                    <p class="text-sm text-slate-500 mt-0.5">Totalização dos pontos dos atletas inscritos em cada equipe.</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="bg-gray-50 p-4 border-b flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-slate-700">Ranking por equipes</h3>
+                        <span class="text-xs font-semibold text-gray-600 bg-gray-200 px-3 py-1 rounded-full" x-text="equipesFiltradas.length + ' equipes'"></span>
                     </div>
-                </template>
+                    <template x-if="equipesFiltradas.length > 0">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full table-fixed">
+                                <thead class="bg-gray-50 border-b">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-16">#</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider min-w-[180px]">Equipe</th>
+                                        <template x-for="etapa in etapas" :key="etapa.id">
+                                            <th class="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap" x-text="'Etapa ' + etapa.numero"></th>
+                                        </template>
+                                        <th class="px-6 py-3 text-right text-xs font-bold text-orange-600 uppercase tracking-wider w-24 whitespace-nowrap bg-orange-50">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    <template x-for="(item, index) in equipesFiltradas" :key="item.id">
+                                        <tr class="hover:bg-orange-50/50 transition-colors" :class="index % 2 !== 0 ? 'bg-slate-50' : 'bg-white'">
+                                            <td class="px-6 py-3 font-bold text-slate-700" x-text="(index + 1) + 'º'"></td>
+                                            <td class="px-6 py-3 font-medium text-slate-900 truncate" x-text="formatName(item.nome) || '—'"></td>
+                                            <template x-for="etapa in etapas" :key="etapa.id">
+                                                <td class="px-4 py-3 text-center text-gray-600" x-text="pontosEtapa(item, etapa.id)"></td>
+                                            </template>
+                                            <td class="px-6 py-3 text-right font-bold text-orange-600 bg-orange-50/80" x-text="item.total_pontos"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                    <div x-show="equipesFiltradas.length === 0" class="p-8 text-center text-gray-500">
+                        <p x-text="rankingEquipesFlat.length === 0 ? 'Nenhum resultado lançado ainda para equipes.' : 'Nenhuma equipe corresponde ao filtro.'"></p>
+                    </div>
+                </div>
             </div>
 
         </div>

@@ -119,12 +119,40 @@ class CampeonatoPublicoController extends Controller
 
         $etapaIds = $etapas->pluck('id')->all();
         $gruposAtletas = $this->agruparRankingPorPercursoCategoria($linhas, $etapaIds, 'atleta_id', 'nome_atleta', 'atleta_id');
-        $gruposEquipes = $this->agruparRankingPorPercursoCategoria($linhas->whereNotNull('equipe_id'), $etapaIds, 'equipe_id', 'nome_equipe', 'equipe_id');
+
+        // Ranking por equipe: totalização de pontos dos atletas inscritos na equipe (uma lista, sem percurso/categoria)
+        $linhasEquipes = $linhas->whereNotNull('equipe_id');
+        $rankingEquipesFlat = $this->rankingFlatPorEquipe($linhasEquipes, $etapaIds);
 
         return view('campeonatos.ranking', compact(
             'campeonato', 'etapas', 'etapasParaRanking',
-            'gruposAtletas', 'gruposEquipes', 'categoriasParaFiltro'
+            'gruposAtletas', 'rankingEquipesFlat', 'categoriasParaFiltro'
         ));
+    }
+
+    /**
+     * Ranking flat por equipe: soma dos pontos de todos os atletas da equipe no campeonato (por etapa e total).
+     */
+    private function rankingFlatPorEquipe(Collection $linhas, array $etapaIds): array
+    {
+        $porEquipe = [];
+        foreach ($linhas as $r) {
+            $equipeId = $r->equipe_id;
+            $equipeNome = $r->nome_equipe ?? '—';
+            if (!isset($porEquipe[$equipeId])) {
+                $porEquipe[$equipeId] = [
+                    'id' => $equipeId,
+                    'nome' => $equipeNome,
+                    'pontos_por_etapa' => array_combine($etapaIds, array_fill(0, count($etapaIds), 0)) ?: [],
+                    'total_pontos' => 0,
+                ];
+            }
+            $pts = (int) ($r->pontos ?? 0);
+            $porEquipe[$equipeId]['pontos_por_etapa'][$r->evento_id] = ($porEquipe[$equipeId]['pontos_por_etapa'][$r->evento_id] ?? 0) + $pts;
+            $porEquipe[$equipeId]['total_pontos'] += $pts;
+        }
+        uasort($porEquipe, fn ($a, $b) => $b['total_pontos'] <=> $a['total_pontos']);
+        return array_values($porEquipe);
     }
 
     /**

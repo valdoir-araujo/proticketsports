@@ -6,6 +6,7 @@ use App\Models\Evento;
 use App\Models\Inscricao;
 use App\Models\Estado;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
@@ -57,7 +58,8 @@ class PublicEventController extends Controller
             ]);
         }
 
-        $estados = Estado::orderBy('nome')->get();
+        // Lista de estados para filtro – cache 30 min (dados quase estáticos)
+        $estados = Cache::remember('public_eventos_estados', 1800, fn () => Estado::orderBy('nome')->get());
 
         return view('eventos.public.index', compact('eventos', 'estados'));
     }
@@ -81,7 +83,7 @@ class PublicEventController extends Controller
                                               ->first();
         }
 
-        $evento->load('percursos.categorias', 'cidade.estado');
+        $evento->load('percursos.categorias', 'cidade.estado', 'eventoContatos');
 
         return view('eventos.public.show', compact('evento', 'inscricaoExistente', 'atleta'));
     }
@@ -95,11 +97,12 @@ class PublicEventController extends Controller
             abort(404);
         }
 
-        // 1. Busca todas as inscrições válidas.
+        // 1. Busca inscrições válidas (limit evita pico de memória em eventos muito grandes; para > 2000 considere paginação na view).
         $inscricoes = Inscricao::where('evento_id', $evento->id)
             ->where('status', '!=', 'cancelada')
-            ->has('atleta.user') 
+            ->has('atleta.user')
             ->with(['atleta.user', 'atleta.cidade.estado', 'equipe', 'categoria.percurso'])
+            ->limit(2000)
             ->get();
 
         // --- LÓGICA DE ORDENAÇÃO AJUSTADA ---
@@ -122,6 +125,44 @@ class PublicEventController extends Controller
         // 3. Envia as variáveis prontas para a view.
         return view('eventos.public.inscritos', compact('evento', 'inscricoes', 'categoriasParaFiltro'));
     }
-    
+
+    /**
+     * Exibe a página pública de resultados de um evento (somente leitura).
+     */
+    public function showResultados(Evento $evento): View
+    {
+        if ($evento->status !== 'publicado') {
+            abort(404);
+        }
+
+        $inscricoes = Inscricao::query()
+            ->where('inscricoes.evento_id', $evento->id)
+            ->where('inscricoes.status', 'confirmada')
+            ->with(['atleta.user', 'atleta.equipe', 'categoria.percurso', 'resultado'])
+            ->join('categorias', 'inscricoes.categoria_id', '=', 'categorias.id')
+            ->join('percursos', 'categorias.percurso_id', '=', 'percursos.id')
+            ->orderBy('percursos.id')
+            ->orderBy('categorias.id')
+            ->select('inscricoes.*')
+            ->limit(3000)
+            ->get();
+
+        $rankingEquipesEtapa = $inscricoes
+            ->whereNotNull('resultado')
+            ->whereNotNull('atleta.equipe_id')
+            ->groupBy('atleta.equipe_id')
+            ->map(function ($inscricoesDaEquipe) {
+                $equipe = $inscricoesDaEquipe->first()->atleta->equipe;
+                if (!$equipe) {
+                    return null;
+                }
+                return ['equipe' => $equipe, 'pontos_totais' => $inscricoesDaEquipe->sum('resultado.pontos_etapa')];
+            })
+            ->filter()
+            ->sortByDesc('pontos_totais')
+            ->values();
+
+        return view('eventos.public.resultados', compact('evento', 'inscricoes', 'rankingEquipesEtapa'));
+    }
 }
 

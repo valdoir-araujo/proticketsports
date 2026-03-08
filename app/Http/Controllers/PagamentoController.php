@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Interfaces\PaymentGatewayInterface;
+use App\Models\Cupom;
 use App\Models\Inscricao;
 use App\Models\ProdutoOpcional;
 use Illuminate\Http\RedirectResponse;
@@ -70,6 +71,9 @@ class PagamentoController extends Controller
                         'metodo_pagamento' => 'cortesia_ou_100_off',
                         'transacao_id_gateway' => 'FREE-' . $inscricao->id . '-' . time()
                     ]);
+                    if ($inscricao->cupom_id) {
+                        Cupom::where('id', $inscricao->cupom_id)->increment('usos');
+                    }
                 });
 
                 return redirect()->route('pagamento.sucesso', $inscricao)
@@ -150,7 +154,10 @@ class PagamentoController extends Controller
                                     $qtd = $produto->pivot->quantidade;
                                     if ($qtd > 0) {
                                         $prodDb = ProdutoOpcional::lockForUpdate()->find($produto->id);
-                                        if ($prodDb && !is_null($prodDb->limite_estoque)) {
+                                        if ($prodDb && $prodDb->limite_estoque !== null) {
+                                            if ($prodDb->limite_estoque < $qtd) {
+                                                throw new \Exception("Estoque insuficiente para o item: {$prodDb->nome} (inscricao #{$insc->id}).");
+                                            }
                                             $prodDb->decrement('limite_estoque', $qtd);
                                         }
                                     }
@@ -219,12 +226,16 @@ class PagamentoController extends Controller
                             ->all();
                     }
                     DB::transaction(function () use ($inscricoesConfirmar, $data) {
+                        $cupomIdsIncrementados = [];
                         foreach ($inscricoesConfirmar as $insc) {
                             foreach ($insc->produtosOpcionais as $produto) {
                                 $qtd = $produto->pivot->quantidade;
                                 if ($qtd > 0) {
                                     $prodDb = ProdutoOpcional::lockForUpdate()->find($produto->id);
-                                    if ($prodDb && !is_null($prodDb->limite_estoque)) {
+                                    if ($prodDb && $prodDb->limite_estoque !== null) {
+                                        if ($prodDb->limite_estoque < $qtd) {
+                                            throw new \Exception("Estoque insuficiente para o item: {$prodDb->nome} (inscricao #{$insc->id}).");
+                                        }
                                         $prodDb->decrement('limite_estoque', $qtd);
                                     }
                                 }
@@ -235,6 +246,10 @@ class PagamentoController extends Controller
                                 'metodo_pagamento' => $data['payment_method'] ?? 'Mercado Pago',
                                 'transacao_id_gateway' => (string) ($data['payment_id'] ?? ''),
                             ]);
+                            if ($insc->cupom_id && !in_array($insc->cupom_id, $cupomIdsIncrementados, true)) {
+                                Cupom::where('id', $insc->cupom_id)->increment('usos');
+                                $cupomIdsIncrementados[] = $insc->cupom_id;
+                            }
                         }
                     });
                 }

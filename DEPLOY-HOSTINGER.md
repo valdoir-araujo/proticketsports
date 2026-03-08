@@ -11,7 +11,15 @@ Este é um guia de texto. Abra este arquivo no Cursor (ele está na raiz do proj
 - Baixe: https://git-scm.com/download/win  
 - Instale e reinicie o terminal (ou o Cursor).
 
-### 2. Inicializar o repositório (uma vez)
+### 2. Configurar nome e e-mail (uma vez no PC)
+O Git exige isso para cada commit. No terminal, rode (troque pelo seu nome e e-mail):
+
+```bash
+git config --global user.name "Seu Nome"
+git config --global user.email "seu@email.com"
+```
+
+### 3. Inicializar o repositório (uma vez)
 Abra o terminal na pasta do projeto e rode:
 
 ```bash
@@ -21,13 +29,24 @@ git add .
 git commit -m "Estado inicial do projeto"
 ```
 
-### 3. A cada melhoria no site
+**Se o terminal disser que "git" não é reconhecido**, use o caminho completo no PowerShell (copie e cole uma linha por vez):
+
+```powershell
+& "C:\Program Files\Git\bin\git.exe" config --global user.name "Seu Nome"
+& "C:\Program Files\Git\bin\git.exe" config --global user.email "seu@email.com"
+cd c:\wamp64\www\proticketsports
+& "C:\Program Files\Git\bin\git.exe" init
+& "C:\Program Files\Git\bin\git.exe" add .
+& "C:\Program Files\Git\bin\git.exe" commit -m "Estado inicial do projeto"
+```
+
+### 4. A cada melhoria no site
 ```bash
 git add .
 git commit -m "Descrição do que mudou (ex: equipe na inscrição em grupo)"
 ```
 
-### 4. (Opcional) Usar GitHub para backup e deploy
+### 5. (Opcional) Usar GitHub para backup e deploy
 1. Crie uma conta em https://github.com (se não tiver).
 2. Crie um repositório novo (ex.: `proticketsports`), **sem** README.
 3. No terminal, na pasta do projeto:

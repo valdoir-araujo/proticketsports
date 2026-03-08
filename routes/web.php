@@ -42,6 +42,10 @@ use App\Http\Controllers\Admin\UsuarioController as AdminUsuarioController;
 use App\Http\Controllers\Admin\RelatorioFinanceiroController;
 use App\Http\Controllers\Admin\ConfiguracaoController;
 use App\Http\Controllers\Admin\ModalidadeController;
+use App\Http\Controllers\Admin\ParceiroController as AdminParceiroController;
+use App\Http\Controllers\Admin\ContatoController as AdminContatoController;
+use App\Http\Controllers\ParceiroPublicoController;
+use App\Http\Controllers\ContatoController;
 
 // Importações para as rotas de autenticação
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -63,7 +67,7 @@ Route::get('/', function () {
     $banners = Banner::where('ativo', true)->orderBy('ordem')->get()->map(function ($banner) {
         return ['id' => $banner->id, 'url' => asset('storage/' . $banner->imagem_url), 'link' => $banner->link_url, 'titulo' => $banner->titulo, 'subtitulo' => $banner->subtitulo];
     });
-    $eventosDestaque = Evento::with(['cidade.estado'])->where('status', 'publicado')->where('data_evento', '>=', now())->orderBy('data_evento', 'asc')->take(8)->get();
+    $eventosDestaque = Evento::with(['cidade.estado', 'modalidade'])->where('status', 'publicado')->where('data_evento', '>=', now())->orderBy('data_evento', 'asc')->take(8)->get();
     
     $modalidades = \App\Models\Modalidade::orderBy('nome')->get(); 
     
@@ -73,17 +77,22 @@ Route::get('/', function () {
 Route::get('/eventos', [PublicEventController::class, 'index'])->name('eventos.public.index');
 Route::get('/eventos/{evento:slug}', [PublicEventController::class, 'show'])->name('eventos.public.show');
 Route::get('/eventos/{evento:slug}/inscritos', [PublicEventController::class, 'showInscritos'])->name('eventos.public.inscritos');
+Route::get('/eventos/{evento:slug}/resultados', [PublicEventController::class, 'showResultados'])->name('eventos.public.resultados');
 
 // --- ROTAS DE CAMPEONATOS PÚBLICOS ---
 Route::get('/campeonatos', [CampeonatoPublicoController::class, 'index'])->name('campeonatos.index');
+Route::get('/campeonatos/{campeonato}/ranking', [CampeonatoPublicoController::class, 'ranking'])->name('campeonatos.ranking');
 Route::get('/campeonatos/{campeonato}', [CampeonatoPublicoController::class, 'show'])->name('campeonatos.show');
+
+Route::get('/parceiros', [ParceiroPublicoController::class, 'index'])->name('parceiros.index');
+Route::get('/contato', [ContatoController::class, 'index'])->name('contato.index');
 
 // --- INSCRIÇÃO: IDENTIFICAÇÃO (CPF/email + data nascimento), sem login ---
 Route::get('/evento/{evento}/identificacao', [InscricaoController::class, 'identificacao'])->name('inscricao.identificacao');
 Route::post('/evento/{evento}/identificacao', [InscricaoController::class, 'verificarIdentificacao'])->name('inscricao.identificacao.verificar');
-// Inscrição create/store: aceitam usuário logado OU session (após identificação)
+// Inscrição create/store: aceitam usuário logado OU session (após identificação). Throttle evita abuso em massa.
 Route::get('/evento/{evento}/inscrever', [InscricaoController::class, 'create'])->name('inscricao.create');
-Route::post('/inscricoes', [InscricaoController::class, 'store'])->name('inscricao.store');
+Route::post('/inscricoes', [InscricaoController::class, 'store'])->name('inscricao.store')->middleware('throttle:15,1');
 Route::get('/api/atletas/search', [InscricaoController::class, 'pesquisarAtleta'])->name('api.atletas.search');
 Route::get('/api/equipes/search', [InscricaoController::class, 'pesquisarEquipe'])->name('api.equipes.search');
 Route::get('/api/equipes/{equipe}/atletas', [InscricaoController::class, 'atletasDaEquipe'])->name('api.equipes.atletas');
@@ -125,6 +134,7 @@ Route::post('/loja/identificacao', [LojaCheckoutController::class, 'verificarIde
 
 // Checkout (Resumo do Pedido e Processamento)
 Route::get('/loja/checkout', [LojaCheckoutController::class, 'index'])->name('loja.checkout');
+Route::post('/loja/checkout/cupom', [LojaCheckoutController::class, 'aplicarCupom'])->name('loja.checkout.cupom');
 Route::post('/loja/checkout/processar', [LojaCheckoutController::class, 'processar'])->name('loja.checkout.processar');
 
 // Pagamento do Pedido (Pós-Checkout Loja)
@@ -141,6 +151,7 @@ Route::get('/pedido/{pedido}/pendente', [LojaCheckoutController::class, 'pendent
 */
 Route::get('/api/estados', [LocationController::class, 'getEstados'])->name('api.estados');
 Route::get('/api/estados/{estado}/cidades', [LocationController::class, 'getCidades'])->name('api.cidades');
+Route::get('/api/cep', [LocationController::class, 'getCep'])->name('api.cep');
 Route::post('/webhook/mercadopago', [PagamentoController::class, 'webhook'])->name('webhook.mercadopago')->middleware('throttle:120,1'); // 120 req/min
 
 
@@ -207,7 +218,7 @@ Route::middleware('auth')->group(function () {
     
     // Pagamento de Inscrição
     Route::get('/inscricao/{inscricao}/pagamento', [PagamentoController::class, 'show'])->name('pagamento.show');
-    Route::post('/inscricao/{inscricao}/processar-pagamento', [PagamentoController::class, 'process'])->name('pagamento.process');
+    Route::post('/inscricao/{inscricao}/processar-pagamento', [PagamentoController::class, 'process'])->name('pagamento.process')->middleware('throttle:30,1');
     Route::get('/pagamento/{inscricao}/sucesso', [PagamentoController::class, 'sucesso'])->name('pagamento.sucesso');
     Route::get('/pagamento/{inscricao}/falha', [PagamentoController::class, 'falha'])->name('pagamento.falha');
 
@@ -234,7 +245,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/dashboard', [OrganizadorDashboardController::class, 'index'])->name('dashboard');
             Route::get('/', [OrganizadorDashboardController::class, 'selecaoOrganizacao'])->name('index'); 
             
-            Route::get('/financeiro', [OrganizacaoController::class, 'financeiro'])->name('financeiro.index');
+            Route::get('/financeiro', fn () => redirect()->route('organizador.dashboard', request()->only('org_id')))->name('financeiro.index');
             Route::patch('/financeiro', [OrganizacaoController::class, 'updateFinanceiro'])->name('financeiro.update');
             
             // Campeonatos
@@ -265,7 +276,6 @@ Route::middleware('auth')->group(function () {
 
             // Rotas Específicas do Evento
             Route::prefix('eventos/{evento}')->name('eventos.')->group(function() {
-                Route::get('gerar-texto-whatsapp', [EventoOrganizadorController::class, 'gerarTextoWhatsapp'])->name('gerarTextoWhatsapp');
                 Route::post('toggle-public-list', [EventoOrganizadorController::class, 'togglePublicList'])->name('togglePublicList');
                 Route::get('exportar-inscritos', [EventoOrganizadorController::class, 'exportarInscritos'])->name('exportarInscritos');
 
@@ -281,6 +291,10 @@ Route::middleware('auth')->group(function () {
                 
                 Route::get('relatorio-financeiro-pdf', [EventoOrganizadorController::class, 'gerarRelatorioFinanceiroPDF'])->name('relatorio-financeiro.pdf');
                 Route::get('relatorio-inscritos-pdf', [EventoOrganizadorController::class, 'gerarRelatorioInscritosPDF'])->name('relatorio-inscritos.pdf');
+                Route::post('contatos', [EventoOrganizadorController::class, 'storeContato'])->name('contatos.store');
+                Route::patch('contatos/{evento_contato}', [EventoOrganizadorController::class, 'updateContato'])->name('contatos.update');
+                Route::delete('contatos/{evento_contato}', [EventoOrganizadorController::class, 'destroyContato'])->name('contatos.destroy');
+                Route::patch('regulamento', [EventoOrganizadorController::class, 'updateRegulamento'])->name('regulamento.update');
             });
             
             Route::patch('resultados/{inscricao}', [EventoOrganizadorController::class, 'updateSingleResultado'])->name('eventos.resultados.updateSingle');
@@ -297,7 +311,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
         Route::resource('banners', BannerController::class);
         Route::resource('modalidades', ModalidadeController::class);
-        
+        Route::resource('parceiros', AdminParceiroController::class);
+        Route::resource('contatos', AdminContatoController::class);
+
         Route::resource('eventos', AdminEventoController::class)->only(['index', 'edit', 'update']);
         Route::resource('usuarios', AdminUsuarioController::class)->except(['create', 'store', 'show', 'destroy']);
         

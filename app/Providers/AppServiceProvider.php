@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,6 +24,11 @@ class AppServiceProvider extends ServiceProvider
     {
         // Correção para tamanho de string em bancos de dados mais antigos
         Schema::defaultStringLength(191);
+
+        // Regra global de senha: mínimo 5 caracteres (usado em registro, alteração e redefinição de senha)
+        Password::defaults(function () {
+            return Password::min(5);
+        });
 
         // --- CORREÇÃO DEFINITIVA PARA HTTPS (HOSTINGER/CLOUDFLARE) ---
         

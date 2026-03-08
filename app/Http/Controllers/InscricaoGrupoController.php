@@ -453,10 +453,12 @@ class InscricaoGrupoController extends Controller
                     $q->whereNull('data_validade')->orWhere('data_validade', '>=', now());
                 })
                 ->first();
-            if ($cupom) {
+            if ($cupom && ($cupom->limite_uso === null || (int) $cupom->usos < (int) $cupom->limite_uso)) {
                 $descontoCupom = $cupom->tipo_desconto === 'percentual'
                     ? $totalGeral * ($cupom->valor / 100)
                     : min((float) $cupom->valor, $totalGeral);
+            } else {
+                $cupom = null;
             }
         }
         $totalComDesconto = max(0, $totalGeral - $descontoCupom);
@@ -544,6 +546,9 @@ class InscricaoGrupoController extends Controller
                     $q->whereNull('data_validade')->orWhere('data_validade', '>=', now());
                 })
                 ->first();
+            if ($cupom && $cupom->limite_uso !== null && (int) $cupom->usos >= (int) $cupom->limite_uso) {
+                $cupom = null;
+            }
         }
 
         $produtosInput = $dados['produtos'] ?? [];

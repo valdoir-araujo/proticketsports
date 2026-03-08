@@ -19,6 +19,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'is_admin' => \App\Http\Middleware\IsAdmin::class,
             'is_organizador' => \App\Http\Middleware\IsOrganizador::class,
         ]);
+        // Webhook do Mercado Pago: chamado pelo servidor deles (sem cookie CSRF)
+        $middleware->validateCsrfTokens(except: [
+            'webhook/mercadopago',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

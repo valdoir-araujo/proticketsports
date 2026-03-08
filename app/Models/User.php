@@ -97,6 +97,15 @@ class User extends Authenticatable implements MustVerifyEmail
     // --- MÉTODOS DE VERIFICAÇÃO (ACL - Access Control List) ---
 
     /**
+     * URL da foto de perfil para exibir no menu etc.
+     * Se o usuário tem perfil de atleta, usa a foto do atleta (Strava ou cadastro); senão null.
+     */
+    public function getProfilePhotoUrlAttribute(): ?string
+    {
+        return $this->atleta?->profile_photo_url;
+    }
+
+    /**
      * Verifica se o usuário pode acessar a área de atleta.
      * IMPORTANTE: Organizadores e Admins também podem se inscrever em eventos,
      * por isso eles retornam true aqui.

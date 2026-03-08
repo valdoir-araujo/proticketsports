@@ -86,7 +86,7 @@
                             <tr>
                                 <td class="px-2 py-1 whitespace-nowrap text-sm font-medium text-gray-900">{{ $inscricao->atleta->user->name ?? 'N/A' }}</td>
                                 <td class="px-2 py-1 whitespace-nowrap text-sm text-gray-700">{{ $inscricao->categoria->nome ?? 'N/A' }}</td>
-                                <td class="px-2 py-1 whitespace-nowrap text-sm text-gray-700">{{ $inscricao->atleta->cidade->nome ?? 'N/A' }}</td>
+                                <td class="px-2 py-1 whitespace-nowrap text-sm text-gray-700">{{ $inscricao->atleta->cidade?->nome ?? 'Exterior' }}</td>
                                 <td class="px-2 py-1 whitespace-nowrap text-sm text-gray-700">{{ $inscricao->equipe->nome ?? 'Individual' }}</td>
                                 <td class="px-2 py-1 whitespace-nowrap">
                                     @if($inscricao->status == 'confirmada')
@@ -110,7 +110,7 @@
                                                 <button type="submit" class="text-indigo-600 hover:text-indigo-900 font-semibold text-xs">Cortesia</button>
                                             </form>
                                         @endif
-                                        <a href="#" class="text-blue-600 hover:text-blue-900 font-semibold text-xs">Editar</a>
+                                        <a href="{{ route('inscricao.edit', $inscricao) }}" class="text-blue-600 hover:text-blue-900 font-semibold text-xs">Editar</a>
                                         @if($inscricao->status == 'confirmada')
                                             <form action="#" method="POST" onsubmit="return confirm('Tem a certeza que deseja CANCELAR esta inscrição?');">
                                                 @csrf

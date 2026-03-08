@@ -1,28 +1,36 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Profile') }}
-        </h2>
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600">
+                <i class="fa-solid fa-user-pen"></i>
+            </div>
+            <div>
+                <h2 class="font-bold text-xl text-slate-800 leading-tight">
+                    Meu Perfil
+                </h2>
+                <p class="text-sm text-slate-500 font-medium">Atualize suas informações e preferências</p>
+            </div>
+        </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            
-            {{-- Card de Informações do Perfil (agora sem limitação de largura interna) --}}
-            <div class="p-0 sm:p-0 bg-white shadow sm:rounded-lg">
+    <div class="py-5 sm:py-8 lg:py-10">
+        {{-- Mesmo container do cabeçalho (max-w-7xl): formulário alinhado à esquerda, largura total --}}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
+            {{-- Card: Informações do Perfil --}}
+            <div class="bg-white shadow-sm rounded-2xl border border-slate-100 overflow-hidden">
                 @include('profile.partials.update-profile-information-form')
             </div>
 
-            {{-- Card para Atualizar Senha --}}
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
+            {{-- Card: Atualizar Senha --}}
+            <div class="bg-white shadow-sm rounded-2xl border border-slate-100 overflow-hidden">
+                <div class="px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
                     @include('profile.partials.update-password-form')
                 </div>
             </div>
 
-            {{-- Card para Deletar Usuário --}}
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
+            {{-- Card: Zona de perigo --}}
+            <div class="bg-white shadow-sm rounded-2xl border border-slate-100 overflow-hidden">
+                <div class="px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
                     @include('profile.partials.delete-user-form')
                 </div>
             </div>

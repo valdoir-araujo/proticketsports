@@ -38,7 +38,7 @@
     </div>
 
     {{-- Conteúdo Principal (Sobreposto ao Header) --}}
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 space-y-8 pb-12 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 space-y-6 sm:space-y-8 pb-8 sm:pb-12 relative z-10 min-w-0">
         
         {{-- Grid de KPIs (Estatísticas) com Cores de Destaque --}}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -128,20 +128,8 @@
         </div>
 
         {{-- Ações Rápidas --}}
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <a href="{{ route('organizador.financeiro.index') }}" class="flex items-center p-4 bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow-md hover:border-teal-300 transition-all group relative overflow-hidden">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-teal-500"></div>
-                <div class="w-12 h-12 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center mr-4 group-hover:bg-teal-500 group-hover:text-white transition-all duration-300 shadow-sm">
-                    <i class="fa-solid fa-money-check-dollar text-xl"></i>
-                </div>
-                <div>
-                    <h4 class="font-bold text-slate-800 text-lg group-hover:text-teal-700 transition-colors">Financeiro</h4>
-                    <p class="text-xs text-slate-500 font-medium">Gerenciar pagamentos</p>
-                </div>
-                <i class="fa-solid fa-arrow-right ml-auto text-slate-300 group-hover:text-teal-500 group-hover:translate-x-1 transition-all"></i>
-            </a>
-
-            <a href="{{ route('organizador.campeonatos.create') }}" class="flex items-center p-4 bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 transition-all group relative overflow-hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <a href="{{ route('organizador.campeonatos.create') }}" class="flex items-center p-4 min-h-[56px] bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 transition-all group relative overflow-hidden active:bg-slate-50">
                 <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500"></div>
                 <div class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mr-4 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-300 shadow-sm">
                     <i class="fa-solid fa-trophy text-xl"></i>
@@ -153,7 +141,7 @@
                 <i class="fa-solid fa-arrow-right ml-auto text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all"></i>
             </a>
 
-            <a href="{{ route('organizador.eventos.create') }}" class="flex items-center p-4 bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow-md hover:border-orange-300 transition-all group relative overflow-hidden">
+            <a href="{{ route('organizador.eventos.create') }}" class="flex items-center p-4 min-h-[56px] bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow-md hover:border-orange-300 transition-all group relative overflow-hidden active:bg-slate-50">
                 <div class="absolute left-0 top-0 bottom-0 w-1 bg-orange-500"></div>
                 <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center mr-4 group-hover:bg-orange-500 group-hover:text-white transition-all duration-300 shadow-sm">
                     <i class="fa-solid fa-calendar-plus text-xl"></i>
@@ -170,68 +158,64 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
             <!-- COLUNA DE CAMPEONATOS -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden">
-                <div class="p-5 border-b border-slate-50 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
-                    <h3 class="font-bold text-lg text-slate-800 flex items-center">
-                        <span class="w-2 h-8 bg-indigo-500 rounded-full mr-3 shadow-sm"></span>
+            <div class="bg-white rounded-2xl shadow-lg border border-slate-100 flex flex-col overflow-hidden ring-1 ring-slate-900/5">
+                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-indigo-50/80 to-white">
+                    <h3 class="font-bold text-xl text-slate-800 flex items-center gap-3">
+                        <span class="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/30">
+                            <i class="fa-solid fa-trophy text-lg"></i>
+                        </span>
                         Campeonatos & Circuitos
                     </h3>
-                    <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100">
-                        {{ count($campeonatosAtivos ?? []) }} ATIVOS
+                    <span class="text-xs font-bold text-indigo-700 bg-indigo-100 px-3 py-1.5 rounded-full border border-indigo-200/80">
+                        {{ count($campeonatosAtivos ?? []) }} ativos
                     </span>
                 </div>
                 
-                <div class="p-4 flex-grow space-y-3">
+                <div class="p-4 flex-grow space-y-4 min-h-[200px] bg-slate-100/70">
                     @forelse($campeonatosAtivos ?? [] as $campeonato)
-                        <div class="group relative flex items-center p-3 rounded-xl bg-white border border-slate-100 hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-50 transition-all duration-300">
-                            
-                            {{-- Imagem --}}
-                            <div class="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-slate-100 border border-slate-100 shadow-sm group-hover:ring-2 ring-indigo-100 transition-all">
-                                @if($campeonato->logo_url)
-                                    <img src="{{ asset('storage/' . $campeonato->logo_url) }}" alt="Logo" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                                @else
-                                    <div class="w-full h-full flex items-center justify-center text-slate-300 bg-slate-50">
-                                        <i class="fa-solid fa-trophy text-2xl group-hover:text-indigo-400 transition-colors"></i>
-                                    </div>
-                                @endif
-                            </div>
+                        <a href="{{ route('organizador.campeonatos.show', $campeonato) }}" class="group block">
+                            <div class="flex items-center gap-4 p-4 rounded-xl border border-slate-200 bg-slate-200/80 hover:bg-indigo-100/90 hover:border-indigo-300 hover:shadow-md hover:shadow-indigo-100/50 transition-all duration-300">
+                                {{-- Logo --}}
+                                <div class="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-white border border-slate-300 shadow-sm group-hover:shadow-md group-hover:ring-2 ring-indigo-300 transition-all">
+                                    @if($campeonato->logo_url)
+                                        <img src="{{ asset('storage/' . $campeonato->logo_url) }}" alt="{{ $campeonato->nome }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                    @else
+                                        <div class="w-full h-full flex items-center justify-center text-indigo-300 bg-gradient-to-br from-indigo-100 to-white">
+                                            <i class="fa-solid fa-trophy text-3xl"></i>
+                                        </div>
+                                    @endif
+                                </div>
 
-                            {{-- Infos --}}
-                            <div class="ml-4 flex-grow min-w-0">
-                                <h4 class="text-sm font-bold text-slate-800 truncate pr-2 group-hover:text-indigo-600 transition-colors">
-                                    {{ $campeonato->nome }}
-                                </h4>
-                                <div class="flex items-center mt-1.5 space-x-3 text-xs font-medium text-slate-500">
-                                    <span class="flex items-center bg-slate-50 px-2 py-0.5 rounded text-slate-600">
-                                        <i class="fa-regular fa-calendar mr-1.5 text-indigo-400"></i>
-                                        {{ $campeonato->ano }}
-                                    </span>
-                                    <span class="flex items-center bg-slate-50 px-2 py-0.5 rounded text-slate-600">
-                                        <i class="fa-solid fa-flag-checkered mr-1.5 text-indigo-400"></i>
-                                        {{ $campeonato->eventos_count }} Etapas
-                                    </span>
+                                <div class="flex-grow min-w-0">
+                                    <h4 class="font-bold text-slate-800 text-base truncate group-hover:text-indigo-800 transition-colors">
+                                        {{ $campeonato->nome }}
+                                    </h4>
+                                    <div class="flex flex-wrap items-center gap-2 mt-2">
+                                        <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-800 bg-indigo-200/90 px-2.5 py-1 rounded-lg">
+                                            <i class="fa-regular fa-calendar text-indigo-600"></i>
+                                            {{ $campeonato->ano }}
+                                        </span>
+                                        <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-slate-300/80 px-2.5 py-1 rounded-lg">
+                                            <i class="fa-solid fa-flag-checkered text-slate-500"></i>
+                                            {{ $campeonato->eventos_count }} {{ $campeonato->eventos_count === 1 ? 'Etapa' : 'Etapas' }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="flex-shrink-0 w-10 h-10 rounded-full bg-slate-300 group-hover:bg-indigo-500 flex items-center justify-center text-slate-600 group-hover:text-white transition-all">
+                                    <i class="fa-solid fa-chevron-right text-sm"></i>
                                 </div>
                             </div>
-
-                            {{-- Botão Ação --}}
-                            <div class="ml-2 z-10">
-                                <a href="{{ route('organizador.campeonatos.show', $campeonato) }}" class="flex items-center justify-center w-9 h-9 rounded-full bg-slate-50 text-slate-400 hover:text-white hover:bg-indigo-500 transition-all shadow-sm group-hover:translate-x-1">
-                                    <i class="fa-solid fa-chevron-right text-xs"></i>
-                                </a>
-                            </div>
-
-                            {{-- Link Absolute --}}
-                            <a href="{{ route('organizador.campeonatos.show', $campeonato) }}" class="absolute inset-0 z-0 rounded-xl focus:outline-none"></a>
-                        </div>
+                        </a>
                     @empty
-                        <div class="flex flex-col items-center justify-center h-48 text-center px-4 border-2 border-dashed border-slate-200 rounded-xl m-2">
-                            <div class="w-14 h-14 bg-indigo-50 rounded-full flex items-center justify-center mb-3 text-indigo-300">
-                                <i class="fa-solid fa-trophy-slash text-2xl"></i>
+                        <div class="flex flex-col items-center justify-center py-16 text-center px-6 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                            <div class="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mb-4 text-indigo-400">
+                                <i class="fa-solid fa-trophy text-3xl"></i>
                             </div>
-                            <p class="text-slate-600 font-bold">Sem campeonatos</p>
-                            <p class="text-xs text-slate-400 mt-1 mb-4 max-w-[200px]">Crie circuitos para agrupar seus eventos e gerar rankings.</p>
-                            <a href="{{ route('organizador.campeonatos.create') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">
-                                + Criar Primeiro Campeonato
+                            <p class="text-slate-700 font-bold text-lg">Nenhum campeonato</p>
+                            <p class="text-sm text-slate-500 mt-1 mb-5 max-w-xs">Crie circuitos para agrupar suas etapas e gerar rankings.</p>
+                            <a href="{{ route('organizador.campeonatos.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 hover:shadow-indigo-300">
+                                <i class="fa-solid fa-plus"></i> Criar campeonato
                             </a>
                         </div>
                     @endforelse
@@ -239,76 +223,69 @@
             </div>
 
             <!-- COLUNA DE EVENTOS AVULSOS -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden">
-                <div class="p-5 border-b border-slate-50 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
-                    <h3 class="font-bold text-lg text-slate-800 flex items-center">
-                        <span class="w-2 h-8 bg-orange-500 rounded-full mr-3 shadow-sm"></span>
+            <div class="bg-white rounded-2xl shadow-lg border border-slate-100 flex flex-col overflow-hidden ring-1 ring-slate-900/5">
+                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-orange-50/80 to-white">
+                    <h3 class="font-bold text-xl text-slate-800 flex items-center gap-3">
+                        <span class="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white shadow-md shadow-orange-500/30">
+                            <i class="fa-solid fa-calendar-days text-lg"></i>
+                        </span>
                         Próximos Eventos
                     </h3>
-                    <span class="text-xs font-bold text-orange-600 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100">
-                        {{ count($eventosAvulsos ?? []) }} AGENDADOS
+                    <span class="text-xs font-bold text-orange-700 bg-orange-100 px-3 py-1.5 rounded-full border border-orange-200/80">
+                        {{ count($eventosAvulsos ?? []) }} agendados
                     </span>
                 </div>
                 
-                <div class="p-4 flex-grow space-y-3">
+                <div class="p-4 flex-grow space-y-4 min-h-[200px]">
                     @forelse($eventosAvulsos as $evento)
-                        <div class="group relative flex items-center p-3 rounded-xl bg-white border border-slate-100 hover:border-orange-200 hover:shadow-md hover:shadow-orange-50 transition-all duration-300">
-                            
-                            {{-- Imagem/Thumbnail --}}
-                            <div class="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-slate-100 border border-slate-100 shadow-sm group-hover:ring-2 ring-orange-100 transition-all">
-                                @if($evento->thumbnail_url)
-                                    <img src="{{ asset('storage/' . $evento->thumbnail_url) }}" alt="Thumbnail" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                                @else
-                                    <div class="w-full h-full flex items-center justify-center text-slate-300 bg-slate-50">
-                                        <i class="fa-solid fa-calendar-days text-2xl group-hover:text-orange-400 transition-colors"></i>
-                                    </div>
-                                @endif
-                                
-                                {{-- Data Badge (Overlay) --}}
-                                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent pt-2 pb-0.5 backdrop-blur-[1px]">
-                                    <div class="text-white text-[10px] font-bold text-center">
-                                        {{ $evento->data_evento->format('d/m') }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Infos --}}
-                            <div class="ml-4 flex-grow min-w-0">
-                                <h4 class="text-sm font-bold text-slate-800 truncate pr-2 group-hover:text-orange-600 transition-colors">
-                                    {{ $evento->nome }}
-                                </h4>
-                                <div class="flex items-center mt-1.5 space-x-3 text-xs font-medium text-slate-500">
-                                    <span class="flex items-center bg-slate-50 px-2 py-0.5 rounded text-slate-600">
-                                        <i class="fa-regular fa-clock mr-1.5 text-orange-400"></i>
-                                        {{ $evento->data_evento->format('H:i') }}
-                                    </span>
-                                    @if($evento->local)
-                                    <span class="flex items-center truncate max-w-[120px] bg-slate-50 px-2 py-0.5 rounded text-slate-600">
-                                        <i class="fa-solid fa-location-dot mr-1.5 text-orange-400"></i>
-                                        {{ $evento->local }}
-                                    </span>
+                        <a href="{{ route('organizador.eventos.show', $evento) }}" class="group block">
+                            <div class="flex items-center gap-4 p-4 rounded-xl border border-slate-100 bg-slate-50/30 hover:bg-orange-50/50 hover:border-orange-200 hover:shadow-md hover:shadow-orange-100/50 transition-all duration-300">
+                                {{-- Thumbnail com data em destaque --}}
+                                <div class="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-white border border-slate-200 shadow-sm group-hover:shadow-md group-hover:ring-2 ring-orange-200 transition-all">
+                                    @if($evento->thumbnail_url)
+                                        <img src="{{ asset('storage/' . $evento->thumbnail_url) }}" alt="{{ $evento->nome }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                    @else
+                                        <div class="w-full h-full flex items-center justify-center text-orange-200 bg-gradient-to-br from-orange-50 to-white">
+                                            <i class="fa-solid fa-calendar-days text-3xl"></i>
+                                        </div>
                                     @endif
+                                    <div class="absolute top-0 left-0 right-0 py-1 bg-gradient-to-b from-black/70 to-transparent">
+                                        <span class="block text-center text-white text-xs font-bold leading-tight">{{ $evento->data_evento->format('d/m') }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex-grow min-w-0">
+                                    <h4 class="font-bold text-slate-800 text-base truncate group-hover:text-orange-700 transition-colors">
+                                        {{ $evento->nome }}
+                                    </h4>
+                                    <div class="flex flex-wrap items-center gap-2 mt-2">
+                                        <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-orange-700 bg-orange-100/80 px-2.5 py-1 rounded-lg">
+                                            <i class="fa-regular fa-clock text-orange-500"></i>
+                                            {{ $evento->data_evento->format('H:i') }}
+                                        </span>
+                                        @if($evento->local)
+                                        <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 truncate max-w-[140px]" title="{{ $evento->local }}">
+                                            <i class="fa-solid fa-location-dot text-slate-400 flex-shrink-0"></i>
+                                            <span class="truncate">{{ $evento->local }}</span>
+                                        </span>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="flex-shrink-0 w-10 h-10 rounded-full bg-slate-100 group-hover:bg-orange-500 flex items-center justify-center text-slate-400 group-hover:text-white transition-all">
+                                    <i class="fa-solid fa-chevron-right text-sm"></i>
                                 </div>
                             </div>
-
-                            {{-- Botão Ação --}}
-                            <div class="ml-2 z-10">
-                                <a href="{{ route('organizador.eventos.show', $evento) }}" class="flex items-center justify-center w-9 h-9 rounded-full bg-slate-50 text-slate-400 hover:text-white hover:bg-orange-500 transition-all shadow-sm group-hover:translate-x-1">
-                                    <i class="fa-solid fa-chevron-right text-xs"></i>
-                                </a>
-                            </div>
-
-                            <a href="{{ route('organizador.eventos.show', $evento) }}" class="absolute inset-0 z-0 rounded-xl focus:outline-none"></a>
-                        </div>
+                        </a>
                     @empty
-                        <div class="flex flex-col items-center justify-center h-48 text-center px-4 border-2 border-dashed border-slate-200 rounded-xl m-2">
-                            <div class="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center mb-3 text-orange-300">
-                                <i class="fa-solid fa-calendar-xmark text-2xl"></i>
+                        <div class="flex flex-col items-center justify-center py-16 text-center px-6 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                            <div class="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mb-4 text-orange-400">
+                                <i class="fa-solid fa-calendar-days text-3xl"></i>
                             </div>
-                            <p class="text-slate-600 font-bold">Agenda vazia</p>
-                            <p class="text-xs text-slate-400 mt-1 mb-4 max-w-[200px]">Crie eventos avulsos que não pertencem a um campeonato.</p>
-                            <a href="{{ route('organizador.eventos.create') }}" class="px-4 py-2 bg-orange-600 text-white rounded-lg text-xs font-bold hover:bg-orange-700 transition shadow-lg shadow-orange-200">
-                                + Criar Evento
+                            <p class="text-slate-700 font-bold text-lg">Nenhum evento agendado</p>
+                            <p class="text-sm text-slate-500 mt-1 mb-5 max-w-xs">Crie eventos avulsos que não fazem parte de um campeonato.</p>
+                            <a href="{{ route('organizador.eventos.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-600 text-white rounded-xl text-sm font-bold hover:bg-orange-700 transition shadow-lg shadow-orange-200 hover:shadow-orange-300">
+                                <i class="fa-solid fa-plus"></i> Criar evento
                             </a>
                         </div>
                     @endforelse

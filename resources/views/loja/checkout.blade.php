@@ -122,6 +122,22 @@
                             <span>Taxas</span>
                             <span>R$ {{ number_format($valorTaxa, 2, ',', '.') }}</span>
                         </div>
+                        @if(isset($cupom) && $cupom && $descontoCupom > 0)
+                            <div class="flex justify-between text-green-600">
+                                <span>Desconto ({{ $cupom->codigo }})</span>
+                                <span>- R$ {{ number_format($descontoCupom, 2, ',', '.') }}</span>
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- Cupom --}}
+                    <div class="mb-6">
+                        <form action="{{ route('loja.checkout.cupom') }}" method="POST" class="flex gap-2">
+                            @csrf
+                            <input type="text" name="codigo_cupom" value="{{ isset($cupom) && $cupom ? $cupom->codigo : '' }}" placeholder="Cupom de desconto" class="flex-1 rounded-lg border-slate-300 text-sm">
+                            <button type="submit" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-sm">Aplicar</button>
+                        </form>
+                        @if(session('sucesso'))<p class="text-xs text-green-600 mt-1">{{ session('sucesso') }}</p>@endif
                     </div>
 
                     <div class="flex justify-between items-end border-t border-dashed border-slate-200 pt-4 mb-8">

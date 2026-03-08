@@ -54,10 +54,11 @@ return [
         'default_gateway' => env('PAYMENT_GATEWAY', 'mercadopago'),
     ],
     
-    // 🟢 CONFIGURAÇÃO DO STRAVA
+    // 🟢 CONFIGURAÇÃO DO STRAVA (cada utilizador conecta o próprio Strava no perfil)
     'strava' => [
         'client_id' => env('STRAVA_CLIENT_ID'),
         'client_secret' => env('STRAVA_CLIENT_SECRET'),
+        // Opcional: se vazio, usa APP_URL + /strava/callback. No painel Strava use o mesmo domínio.
         'redirect_uri' => env('STRAVA_REDIRECT_URI'),
     ],
 

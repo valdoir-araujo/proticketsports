@@ -55,8 +55,8 @@
                             <!-- Avatar Principal (LOCAL CORRETO E ÚNICO) -->
                             <div class="-mt-16 mb-4 flex justify-center">
                                 <div class="h-28 w-28 rounded-2xl border-4 border-white bg-slate-100 shadow-lg overflow-hidden relative group-hover:scale-105 transition-transform duration-300 flex items-center justify-center">
-                                    @if(isset($user->atleta) && $user->atleta->foto_url)
-                                        <img src="{{ asset('storage/' . $user->atleta->foto_url) }}" alt="{{ $user->name }}" class="h-full w-full object-cover object-center">
+                                    @if(isset($user->atleta) && $user->atleta->profile_photo_url)
+                                        <img src="{{ $user->atleta->profile_photo_url }}" alt="{{ $user->name }}" class="h-full w-full object-cover object-center">
                                     @elseif($user->profile_photo_url)
                                         <img src="{{ $user->profile_photo_url }}" alt="{{ $user->name }}" class="h-full w-full object-cover object-center">
                                     @else
@@ -112,15 +112,11 @@
                                 </div>
                             </div>
                             
-                            <!-- Resumo Rápido (Stats) -->
-                            <div class="grid grid-cols-2 gap-4 mb-6">
+                            <!-- Resumo Rápido (Inscrições) -->
+                            <div class="mb-6">
                                 <div class="bg-indigo-50 rounded-xl p-3 text-center border border-indigo-100">
                                     <span class="block text-2xl font-black text-indigo-600">{{ $inscricoes->total() }}</span>
                                     <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Inscrições</span>
-                                </div>
-                                <div class="bg-orange-50 rounded-xl p-3 text-center border border-orange-100">
-                                    <span class="block text-2xl font-black text-orange-600">{{ $equipes->count() }}</span>
-                                    <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider">Equipes</span>
                                 </div>
                             </div>
 
@@ -191,15 +187,18 @@
                                                     @endif
                                                 </div>
 
-                                                {{-- Resultados (Se houver) --}}
-                                                @if($inscricao->resultado && $inscricao->resultado->posicao_categoria)
-                                                    <div class="mt-3 flex items-center gap-3">
-                                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold border border-indigo-100 shadow-sm">
-                                                            <i class="fa-solid fa-trophy text-yellow-500"></i> {{ $inscricao->resultado->posicao_categoria }}º Lugar
-                                                        </span>
+                                                {{-- Resultados (Se houver) — somente leitura — detalhes em "Ver" --}}
+                                                @if($inscricao->resultado)
+                                                    <div class="mt-3 flex flex-wrap items-center gap-3">
+                                                        @if($inscricao->resultado->posicao_categoria)
+                                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold border border-indigo-100 shadow-sm">
+                                                                <i class="fa-solid fa-trophy text-yellow-500"></i> {{ $inscricao->resultado->posicao_categoria }}º Lugar
+                                                            </span>
+                                                        @endif
                                                         <span class="text-xs font-mono font-medium text-slate-500">
-                                                            Tempo: {{ $inscricao->resultado->tempo_formatado ?? '-' }}
+                                                            Tempo: {{ $inscricao->resultado->tempo_formatado ?? '—' }}
                                                         </span>
+                                                        <a href="{{ route('inscricao.show', $inscricao->id) }}" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Ver resultado completo</a>
                                                     </div>
                                                 @endif
                                             </div>
@@ -261,53 +260,6 @@
                                 {{ $inscricoes->links() }}
                             </div>
                         @endif
-                    </div>
-
-                    {{-- Seção: Minhas Equipes --}}
-                    <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
-                        <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-slate-50 to-white">
-                            <h3 class="font-bold text-slate-800 flex items-center gap-3 text-lg">
-                                <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-                                    <i class="fa-solid fa-users"></i>
-                                </div>
-                                Minhas Equipes
-                            </h3>
-                            <a href="{{ route('equipes.create') }}" class="inline-flex items-center px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-indigo-600 uppercase tracking-wide hover:bg-indigo-50 hover:border-indigo-200 transition shadow-sm">
-                                <i class="fa-solid fa-plus mr-2"></i> Nova Equipe
-                            </a>
-                        </div>
-                        
-                        <div class="p-6">
-                            @if($equipes->isEmpty())
-                                <div class="text-center py-6 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
-                                    <p class="text-sm text-slate-500 font-medium">Você ainda não faz parte de nenhuma equipe.</p>
-                                </div>
-                            @else
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    @foreach($equipes as $equipe)
-                                        <div class="flex items-center gap-4 p-4 rounded-xl border border-slate-200 bg-white hover:border-blue-300 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer relative overflow-hidden">
-                                            <div class="absolute inset-0 bg-gradient-to-r from-transparent to-blue-50/50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                            
-                                            <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-xl flex-shrink-0 shadow-md group-hover:scale-110 transition-transform relative z-10">
-                                                {{ substr($equipe->nome, 0, 1) }}
-                                            </div>
-                                            
-                                            <div class="overflow-hidden flex-1 relative z-10">
-                                                <p class="font-bold text-base text-slate-800 truncate group-hover:text-blue-700 transition-colors">{{ $equipe->nome }}</p>
-                                                <p class="text-xs text-slate-500 truncate flex items-center gap-1 mt-0.5">
-                                                    <i class="fa-solid fa-location-dot text-slate-300"></i>
-                                                    {{ $equipe->cidade->nome ?? 'Cidade não inf.' }}
-                                                </p>
-                                            </div>
-
-                                            <div class="text-slate-300 group-hover:text-blue-500 transition-colors relative z-10">
-                                                <i class="fa-solid fa-chevron-right"></i>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @endif
-                        </div>
                     </div>
 
                 </div>

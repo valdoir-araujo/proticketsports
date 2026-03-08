@@ -21,6 +21,7 @@ class StoreEventoRequest extends FormRequest
             'pontos_multiplicador' => 'required|integer|min:1',
             'banner' => 'nullable|image|mimes:jpeg,png,jpg|max:20480',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg|max:10240',
+            // Datas retroativas permitidas (eventos passados, histórico, etc.)
             'data_evento' => 'required|date',
             'data_inicio_inscricoes' => 'required|date',
             'data_fim_inscricoes' => 'required|date|after:data_inicio_inscricoes',

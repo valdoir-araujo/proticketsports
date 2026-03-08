@@ -6,14 +6,14 @@
         </h2>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
-                    <p class="mb-6">Aqui você pode ver o histórico de todas as suas inscrições e gerenciar pagamentos pendentes.</p>
+                <div class="p-4 sm:p-6 text-gray-900">
+                    <p class="mb-6 text-sm sm:text-base">Aqui você pode ver o histórico de todas as suas inscrições e gerenciar pagamentos pendentes.</p>
 
-                    <div class="overflow-x-auto border border-gray-200 rounded-lg">
-                        <table class="min-w-full divide-y divide-gray-200">
+                    <div class="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 min-w-0 border border-gray-200 rounded-lg" style="-webkit-overflow-scrolling: touch;">
+                        <table class="min-w-full divide-y divide-gray-200 min-w-[600px]">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Evento</th>
@@ -48,22 +48,18 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
                                             <div class="flex items-center justify-center gap-x-2">
                                                 @if($inscricao->status == 'aguardando_pagamento')
-                                                    {{-- Botão Editar (funcional) --}}
-                                                    <a href="{{ route('inscricao.edit', $inscricao) }}" class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-3 rounded-lg text-xs transition" title="Editar Inscrição">
+                                                    <a href="{{ route('inscricao.edit', $inscricao) }}" class="inline-flex items-center justify-center min-h-[44px] bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-3 rounded-lg text-xs sm:text-sm transition" title="Editar Inscrição">
                                                         <i class="fa-solid fa-pencil mr-1"></i>
                                                         <span>Editar</span>
                                                     </a>
-                                                    {{-- Botão Pagar Agora --}}
-                                                    <a href="{{ route('pagamento.show', $inscricao) }}" class="inline-block bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg text-xs transition">
+                                                    <a href="{{ route('pagamento.show', $inscricao) }}" class="inline-flex items-center justify-center min-h-[44px] bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg text-xs sm:text-sm transition">
                                                         Pagar
                                                     </a>
                                                 @else
-                                                    {{-- Botão Ver Detalhes --}}
-                                                    <a href="{{ route('inscricao.show', $inscricao) }}" class="inline-block bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg text-xs transition">
+                                                    <a href="{{ route('inscricao.show', $inscricao) }}" class="inline-flex items-center justify-center min-h-[44px] bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg text-xs sm:text-sm transition">
                                                         Detalhes
                                                     </a>
-                                                    {{-- Botão Editar (funcional para todas as inscrições) --}}
-                                                    <a href="{{ route('inscricao.edit', $inscricao) }}" class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-3 rounded-lg text-xs transition" title="Editar Inscrição">
+                                                    <a href="{{ route('inscricao.edit', $inscricao) }}" class="inline-flex items-center justify-center min-h-[44px] bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-3 rounded-lg text-xs sm:text-sm transition" title="Editar Inscrição">
                                                         <i class="fa-solid fa-pencil mr-1"></i>
                                                         <span>Editar</span>
                                                     </a>

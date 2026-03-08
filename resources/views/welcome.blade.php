@@ -1,6 +1,6 @@
 @extends('layouts.public')
 
-@section('title', 'Proticketsports - O Seu Portal de Eventos de Ciclismo')
+@section('title', config('app.name') . ' - ' . config('app.tagline'))
 
 @push('styles')
     <style>
@@ -134,7 +134,7 @@
                             <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Nome do Evento ou Cidade</label>
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa-solid fa-search text-gray-400"></i></span>
-                                <input type="text" name="search" id="search" class="block w-full rounded-md border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:border-orange-500 focus:ring-orange-500 pl-10 py-2.5 text-sm shadow-sm" 
+                                <input type="text" name="search" id="search" class="block w-full rounded-md border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:border-orange-500 focus:ring-orange-500 pl-10 py-3 text-base shadow-sm min-h-[44px]" 
                                        placeholder="Pesquisar..." value="{{ request('search') }}">
                             </div>
                         </div>
@@ -143,7 +143,7 @@
                             <label for="modalidade_id" class="block text-sm font-medium text-gray-700 mb-1">Modalidade</label>
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa-solid fa-tags text-gray-400"></i></span>
-                                <select name="modalidade_id" id="modalidade_id" class="block w-full rounded-md border-gray-300 bg-white text-gray-700 focus:border-orange-500 focus:ring-orange-500 pl-10 pr-10 py-2.5 text-sm shadow-sm cursor-pointer appearance-none bg-no-repeat">
+                                <select name="modalidade_id" id="modalidade_id" class="block w-full rounded-md border-gray-300 bg-white text-gray-700 focus:border-orange-500 focus:ring-orange-500 pl-10 pr-10 py-3 text-base shadow-sm cursor-pointer appearance-none bg-no-repeat min-h-[44px]">
                                     <option value="">Todas</option>
                                     @php
                                         $modalidades = isset($modalidades) ? $modalidades : \App\Models\Modalidade::orderBy('nome')->get();
@@ -162,13 +162,13 @@
                             <label for="data_inicio" class="block text-sm font-medium text-gray-700 mb-1">A partir de</label>
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa-regular fa-calendar text-gray-400"></i></span>
-                                <input type="date" name="data_inicio" id="data_inicio" class="block w-full rounded-md border-gray-300 bg-white text-gray-700 focus:border-orange-500 focus:ring-orange-500 pl-10 py-2.5 text-sm shadow-sm"
+                                <input type="date" name="data_inicio" id="data_inicio" class="block w-full rounded-md border-gray-300 bg-white text-gray-700 focus:border-orange-500 focus:ring-orange-500 pl-10 py-3 text-base shadow-sm min-h-[44px]"
                                        value="{{ request('data_inicio') }}">
                             </div>
                         </div>
 
                         <div>
-                            <button type="submit" class="w-full flex items-center justify-center px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-md shadow-sm transition duration-300">
+                            <button type="submit" class="w-full flex items-center justify-center min-h-[44px] px-4 py-3 text-base bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-md shadow-sm transition duration-300">
                                 <i class="fa-solid fa-filter mr-2"></i> Filtrar
                             </button>
                         </div>

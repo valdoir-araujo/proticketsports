@@ -9,7 +9,48 @@ class UpdateInscricaoRequest extends FormRequest
     public function authorize(): bool
     {
         $inscricao = $this->route('inscricao');
-        return $inscricao && $this->user() && $inscricao->atleta->user_id === $this->user()->id;
+        if (! $inscricao || ! $this->user()) {
+            return false;
+        }
+        if ($inscricao->atleta->user_id === $this->user()->id) {
+            return true;
+        }
+        $organizacao = $inscricao->evento->organizacao ?? null;
+        return $organizacao && $this->user()->organizacoes->contains($organizacao);
+    }
+
+    /**
+     * Normaliza o array de produtos: mantém apenas itens com id válido (ou chave como id)
+     * e quantidade >= 0, para evitar erro "valor obrigatório para produtos.X.id".
+     */
+    protected function prepareForValidation(): void
+    {
+        $produtos = $this->input('produtos', []);
+        if (! is_array($produtos)) {
+            return;
+        }
+
+        $normalized = [];
+        foreach ($produtos as $key => $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+            $id = $item['id'] ?? $key;
+            if ($id === '' || $id === null) {
+                continue;
+            }
+            $qty = (int) ($item['quantidade'] ?? 0);
+            if ($qty < 0) {
+                continue;
+            }
+            $normalized[] = [
+                'id' => (int) $id,
+                'quantidade' => $qty,
+                'tamanho' => $item['tamanho'] ?? null,
+            ];
+        }
+
+        $this->merge(['produtos' => $normalized]);
     }
 
     public function rules(): array

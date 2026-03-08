@@ -22,6 +22,7 @@ class UpdateEventoRequest extends FormRequest
             'modalidade_id' => 'required|integer|exists:modalidades,id',
             'campeonato_id' => 'nullable|integer|exists:campeonatos,id',
             'pontos_multiplicador' => 'required|integer|min:1',
+            // Datas retroativas permitidas
             'data_evento' => 'required|date',
             'data_inicio_inscricoes' => 'required|date',
             'data_fim_inscricoes' => 'required|date|after:data_inicio_inscricoes',

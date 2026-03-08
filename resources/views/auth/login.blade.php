@@ -3,125 +3,126 @@
 @section('title', 'Acessar Conta - Proticketsports')
 
 @section('content')
-<div class="min-h-screen bg-white flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+<div class="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col justify-center py-12 sm:py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
     
-    {{-- Elementos Decorativos de Fundo (Sutis) --}}
-    <div class="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-500/5 rounded-full blur-3xl"></div>
-        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/5 rounded-full blur-3xl"></div>
+    {{-- Fundo: padrão sutil + manchas de cor --}}
+    <div class="absolute inset-0 overflow-hidden z-0 pointer-events-none">
+        <div class="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-orange-500/5 to-transparent"></div>
+        <div class="absolute top-[-15%] right-[-10%] w-[50%] h-[50%] bg-orange-400/10 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-[-15%] left-[-10%] w-[40%] h-[40%] bg-slate-400/10 rounded-full blur-3xl"></div>
+        <div class="absolute inset-0 opacity-[0.02]" style="background-image: radial-gradient(circle at 1px 1px, #0f172a 1px, transparent 0); background-size: 24px 24px;"></div>
     </div>
 
-    {{-- Botão Voltar --}}
-    <div class="absolute top-6 left-6 z-20">
-        <a href="{{ url('/') }}" class="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
-            <i class="fa-solid fa-arrow-left"></i> Voltar ao site
-        </a>
-    </div>
-
-    <div class="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        {{-- Logo / Branding --}}
+    <div class="w-full sm:mx-auto sm:max-w-[420px] relative z-10">
+        {{-- Cabeçalho --}}
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-black text-slate-900 tracking-tight">
-                <span class="text-orange-600">Pro</span>ticketsports
-            </h1>
-            <p class="mt-2 text-sm text-slate-500">
+            <a href="{{ url('/') }}" class="inline-block focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 rounded-xl">
+                <h1 class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                    <span class="text-orange-600">Pro</span>ticketsports
+                </h1>
+            </a>
+            <p class="mt-3 text-slate-600 text-base font-medium">
                 Acesse sua conta para gerenciar inscrições
             </p>
         </div>
 
-        {{-- Card Principal (Agora com fundo Cinza Claro) --}}
-        <div class="bg-slate-50 py-8 px-4 shadow-xl shadow-slate-200/60 sm:rounded-2xl sm:px-10 border border-slate-200">
-            
-            <x-auth-session-status class="mb-4" :status="session('status')" />
+        {{-- Card do formulário --}}
+        <div class="relative bg-white/90 backdrop-blur-sm py-8 px-5 sm:px-10 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200/80">
+            {{-- Faixa de destaque no topo do card --}}
+            <div class="absolute top-0 left-0 right-0 h-1 rounded-t-2xl bg-gradient-to-r from-orange-500 to-orange-600" aria-hidden="true"></div>
 
-            <form method="POST" action="{{ route('login') }}" class="space-y-6" id="login-form">
+            <x-auth-session-status class="mb-5" :status="session('status')" />
+
+            <form method="POST" action="{{ route('login') }}" class="space-y-5" id="login-form">
                 @csrf
 
-                {{-- Input Login --}}
-                <div>
-                    <label for="login" class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                        CPF, CNPJ ou E-mail
+                {{-- Estrangeiro: opção discreta --}}
+                <div class="flex justify-end">
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-orange-600 cursor-pointer transition-colors select-none">
+                        <input type="checkbox" name="login_estrangeiro" value="1" id="login_estrangeiro"
+                            class="h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500 cursor-pointer">
+                        <span>É estrangeiro? Entrar com e-mail</span>
                     </label>
-                    <div class="relative rounded-md shadow-sm">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fa-regular fa-envelope text-slate-400"></i>
-                        </div>
-                        {{-- Input Branco para destacar no fundo cinza --}}
-                        <input id="login" name="login" type="text" value="{{ old('login') }}" required autofocus autocomplete="username" 
-                            class="block w-full pl-10 sm:text-sm bg-white border-slate-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 transition-colors h-11 shadow-sm" 
-                            placeholder="seu@email.com ou documento">
-                    </div>
-                    <x-input-error :messages="$errors->get('login')" class="mt-1" />
-                    <span id="login-error" class="text-xs text-red-500 mt-1 font-bold hidden"></span>
                 </div>
 
-                {{-- Input Senha --}}
+                {{-- Login (e-mail ou CPF) --}}
                 <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label for="password" class="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+                    <label for="login" id="login-label" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                        E-mail ou CPF/CNPJ
+                    </label>
+                    <div class="relative rounded-xl border-2 border-slate-200 bg-slate-50/50 focus-within:border-orange-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-orange-500/20 transition-all">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-regular fa-envelope"></i>
+                        </div>
+                        <input id="login" name="login" type="text" value="{{ old('login') }}" required autofocus autocomplete="username" 
+                            class="block w-full pl-11 pr-4 py-3 bg-transparent text-slate-800 placeholder-slate-400 focus:outline-none sm:text-sm rounded-xl" 
+                            placeholder="seu@email.com ou CPF">
+                    </div>
+                    <x-input-error :messages="$errors->get('login')" class="mt-1.5" />
+                    <span id="login-error" class="text-sm text-red-600 mt-1 font-medium hidden"></span>
+                    <p id="login-hint-estrangeiro" class="text-sm text-orange-600 mt-1.5 font-medium hidden">Use o mesmo e-mail cadastrado na plataforma.</p>
+                </div>
+
+                {{-- Senha --}}
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label for="password" class="block text-sm font-semibold text-slate-700">
                             Senha
                         </label>
                         @if (Route::has('password.request'))
-                            <a href="{{ route('password.request') }}" class="text-xs text-orange-600 hover:text-orange-500 font-medium">
-                                Esqueceu?
+                            <a href="{{ route('password.request') }}" class="text-sm text-orange-600 hover:text-orange-700 font-medium">
+                                Esqueceu a senha?
                             </a>
                         @endif
                     </div>
-                    <div class="relative rounded-md shadow-sm">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fa-solid fa-lock text-slate-400"></i>
+                    <div class="relative rounded-xl border-2 border-slate-200 bg-slate-50/50 focus-within:border-orange-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-orange-500/20 transition-all">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-lock"></i>
                         </div>
-                        {{-- Input Branco para destacar no fundo cinza --}}
                         <input id="password" name="password" type="password" required autocomplete="current-password"
-                            class="block w-full pl-10 pr-10 sm:text-sm bg-white border-slate-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 transition-colors h-11 shadow-sm" 
+                            class="block w-full pl-11 pr-12 py-3 bg-transparent text-slate-800 placeholder-slate-400 focus:outline-none sm:text-sm rounded-xl" 
                             placeholder="••••••••">
-                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                            <button type="button" id="togglePassword" class="text-slate-400 hover:text-slate-600 focus:outline-none" tabindex="-1">
+                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center">
+                            <button type="button" id="togglePassword" class="p-1 text-slate-400 hover:text-slate-600 focus:outline-none rounded" tabindex="-1" aria-label="Mostrar senha">
                                 <i class="fa-regular fa-eye"></i>
                             </button>
                         </div>
                     </div>
-                    <x-input-error :messages="$errors->get('password')" class="mt-1" />
+                    <x-input-error :messages="$errors->get('password')" class="mt-1.5" />
                 </div>
 
-                {{-- Lembrar --}}
-                <div class="flex items-center">
-                    <input id="remember_me" name="remember" type="checkbox" class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded cursor-pointer bg-white">
-                    <label for="remember_me" class="ml-2 block text-sm text-slate-600 cursor-pointer">
+                {{-- Manter conectado --}}
+                <div class="flex items-center gap-2">
+                    <input id="remember_me" name="remember" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500 cursor-pointer">
+                    <label for="remember_me" class="text-sm text-slate-600 cursor-pointer select-none">
                         Manter conectado
                     </label>
                 </div>
 
-                {{-- Botão Submit --}}
-                <div>
-                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-sm font-bold text-white bg-slate-900 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200 transform hover:-translate-y-0.5">
+                {{-- Botão Entrar --}}
+                <div class="pt-1">
+                    <button type="submit" class="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl text-base font-bold text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/25 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all duration-200 active:scale-[0.99]">
+                        <i class="fa-solid fa-right-to-bracket text-white/90"></i>
                         Entrar
                     </button>
                 </div>
             </form>
 
-            {{-- Separador --}}
-            <div class="mt-8">
-                <div class="relative">
-                    <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-slate-300/70"></div>
-                    </div>
-                    <div class="relative flex justify-center text-sm">
-                        <span class="px-2 bg-slate-50 text-slate-500 font-medium">Novo por aqui?</span>
-                    </div>
-                </div>
-
-                <div class="mt-6">
-                    <a href="{{ route('register') }}" class="w-full flex justify-center py-3 px-4 border border-slate-300 rounded-lg shadow-sm bg-white text-sm font-bold text-slate-700 hover:bg-white hover:text-orange-600 hover:border-orange-300 transition-all">
-                        Criar Conta Gratuita
-                    </a>
-                </div>
+            {{-- Separador "Novo por aqui?" --}}
+            <div class="mt-8 pt-6 border-t border-slate-200">
+                <p class="text-center text-sm text-slate-500 mb-4">
+                    Ainda não tem conta?
+                </p>
+                <a href="{{ route('register') }}" class="block w-full text-center py-3 px-4 rounded-xl border-2 border-slate-200 text-slate-700 font-bold text-sm hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 transition-all">
+                    Criar conta gratuita
+                </a>
             </div>
         </div>
         
         {{-- Rodapé --}}
-        <p class="mt-8 text-center text-xs text-slate-400">
-            &copy; {{ date('Y') }} Proticketsports. Ambiente Seguro SSL.
+        <p class="mt-8 text-center text-xs text-slate-400 flex items-center justify-center gap-1.5 flex-wrap">
+            <i class="fa-solid fa-lock text-slate-300"></i>
+            <span>&copy; {{ date('Y') }} Proticketsports. Conexão segura.</span>
         </p>
     </div>
 </div>
@@ -133,7 +134,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const loginInput = document.getElementById('login');
     const loginForm = document.getElementById('login-form');
     const loginError = document.getElementById('login-error');
-    
+    const loginLabel = document.getElementById('login-label');
+    const hintEstrangeiro = document.getElementById('login-hint-estrangeiro');
+    const checkEstrangeiro = document.getElementById('login_estrangeiro');
+
+    function updateLoginUIForEstrangeiro() {
+        const isEstrangeiro = checkEstrangeiro && checkEstrangeiro.checked;
+        if (loginLabel) loginLabel.textContent = isEstrangeiro ? 'E-mail' : 'E-mail ou CPF/CNPJ';
+        if (loginInput) loginInput.placeholder = isEstrangeiro ? 'seu@email.com' : 'seu@email.com ou CPF';
+        if (hintEstrangeiro) {
+            if (isEstrangeiro) hintEstrangeiro.classList.remove('hidden'); else hintEstrangeiro.classList.add('hidden');
+        }
+    }
+    if (checkEstrangeiro) {
+        checkEstrangeiro.addEventListener('change', updateLoginUIForEstrangeiro);
+        updateLoginUIForEstrangeiro();
+    }
+
     // Toggle Password Logic
     const togglePasswordBtn = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
@@ -198,8 +215,9 @@ document.addEventListener('DOMContentLoaded', function () {
         return result == digits.charAt(1);
     }
 
-    // Input Masking
+    // Input Masking (apenas quando não for estrangeiro)
     loginInput.addEventListener('input', function(e) {
+        if (checkEstrangeiro && checkEstrangeiro.checked) return;
         const originalValue = e.target.value;
         loginError.classList.add('hidden');
         loginError.textContent = ''; 
@@ -226,8 +244,17 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Form Submission
+    // Form Submission (estrangeiro: só e-mail, sem validar CPF/CNPJ)
     loginForm.addEventListener('submit', function(e) {
+        if (checkEstrangeiro && checkEstrangeiro.checked) {
+            if (!loginInput.value || !loginInput.value.includes('@')) {
+                e.preventDefault();
+                loginError.textContent = 'Estrangeiros devem informar o e-mail cadastrado.';
+                loginError.classList.remove('hidden');
+                loginInput.focus();
+            }
+            return;
+        }
         const value = loginInput.value;
         if (value.includes('@')) return; 
 

@@ -93,9 +93,9 @@ class MercadoPagoService implements PaymentGatewayInterface
             $payerDocument = preg_replace('/[^0-9]/', '', $data['payer']['identification']['number'] ?? '');
             $client = new PaymentClient();
 
-            // 1. Montagem dos dados base
+            // 1. Montagem dos dados base (valor SEMPRE do servidor - nunca do cliente)
             $payment_request = [
-                "transaction_amount" => (float) $data['transaction_amount'],
+                "transaction_amount" => (float) $inscricao->valor_pago,
                 "token" => $data['token'],
                 "description" => "Inscrição #{$inscricao->id} - ProTicket",
                 "installments" => (int) $data['installments'],

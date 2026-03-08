@@ -16,6 +16,7 @@ use App\Models\Percurso;
 use App\Models\LancamentoFinanceiro;
 use App\Models\LoteInscricaoGeral;
 use App\Models\Modalidade;
+use App\Models\EventoContato;
 use App\Models\PercursoModelo;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -44,7 +45,7 @@ class EventoOrganizadorController extends Controller
 
     public function index(Request $request): View
     {
-        $organizacao = $request->user()->organizacoes->first();
+        $organizacao = $request->user()->organizacoes()->first();
         $eventos = $organizacao ? $organizacao->eventos()->latest()->paginate(10) : collect();
         return view('organizador.eventos.index', compact('eventos'));
     }
@@ -137,44 +138,62 @@ class EventoOrganizadorController extends Controller
     public function show(Request $request, Evento $evento): View
     {
         $this->authorize('view', $evento);
-        
+
         $user = Auth::user();
         $organizacao = $user->organizacoes()->where('organizacoes.id', $evento->organizacao_id)->first();
-        
+
         if (!$organizacao && !$user->isAdmin()) {
-             abort(403, 'Acesso negado.');
+            abort(403, 'Acesso negado.');
         }
 
-        $totalInscritos = $evento->inscricoes()->count();
-        $totalPendentes = $evento->inscricoes()->where('status', 'aguardando_pagamento')->count();
-        $totalConfirmados = $evento->inscricoes()->where('status', 'confirmada')->count();
-        
-        $totalArrecadado = $evento->inscricoes()->where('status', 'confirmada')->sum('valor_pago');
-        $taxaPlataforma = $evento->inscricoes()->where('status', 'confirmada')->sum('taxa_plataforma');
-        
+        // Uma única query para todas as estatísticas de inscrições (evita 5 queries)
+        $inscricoesStats = $evento->inscricoes()
+            ->selectRaw("
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 'aguardando_pagamento' THEN 1 ELSE 0 END) as pendentes,
+                SUM(CASE WHEN status = 'confirmada' THEN 1 ELSE 0 END) as confirmados,
+                COALESCE(SUM(CASE WHEN status = 'confirmada' THEN valor_pago ELSE 0 END), 0) as arrecadado,
+                COALESCE(SUM(CASE WHEN status = 'confirmada' THEN taxa_plataforma ELSE 0 END), 0) as taxa
+            ")->first();
+
+        $totalInscritos = (int) $inscricoesStats->total;
+        $totalPendentes = (int) $inscricoesStats->pendentes;
+        $totalConfirmados = (int) $inscricoesStats->confirmados;
+        $totalArrecadado = (float) $inscricoesStats->arrecadado;
+        $taxaPlataforma = (float) $inscricoesStats->taxa;
+
         $totalRepassado = 0;
-        if(method_exists($evento, 'repasses')) {
-             $totalRepassado = $evento->repasses()->where('status', 'Realizado')->sum('valor_total_repassado');
+        if (method_exists($evento, 'repasses')) {
+            $totalRepassado = $evento->repasses()->where('status', 'Realizado')->sum('valor_total_repassado');
         }
         $valorAReceber = $totalArrecadado - $taxaPlataforma - $totalRepassado;
-        
-        $lancamentosFinanceiros = $evento->lancamentosFinanceiros()->orderBy('data', 'desc')->paginate(12, ['*'], 'lancamentosPage');
-        $totalReceitasManuais = $evento->lancamentosFinanceiros()->where('tipo', 'receita')->sum('valor');
-        $totalDespesas = $evento->lancamentosFinanceiros()->where('tipo', 'despesa')->sum('valor');
-        
-        $valorTotalRecebido = $totalArrecadado; 
+
+        // Uma query para totais de lançamentos + paginate separado (evita 2 sum queries)
+        $lancamentosSums = $evento->lancamentosFinanceiros()
+            ->selectRaw("
+                COALESCE(SUM(CASE WHEN tipo = 'receita' THEN valor ELSE 0 END), 0) as receitas,
+                COALESCE(SUM(CASE WHEN tipo = 'despesa' THEN valor ELSE 0 END), 0) as despesas
+            ")->first();
+
+        $totalReceitasManuais = (float) $lancamentosSums->receitas;
+        $totalDespesas = (float) $lancamentosSums->despesas;
+        $valorTotalRecebido = $totalArrecadado;
         $totalReceitas = $totalReceitasManuais + $valorTotalRecebido;
         $saldoFinal = $totalReceitas - $totalDespesas;
 
+        $lancamentosFinanceiros = $evento->lancamentosFinanceiros()->orderBy('data', 'desc')->paginate(12, ['*'], 'lancamentosPage');
+
+        // Eager load para evitar N+1: campeonato na view; percursos com categorias
+        $evento->load('campeonato');
         $inscricoes = $evento->inscricoes()->with(['atleta.user', 'atleta.cidade.estado', 'categoria', 'equipe'])->orderBy('created_at', 'desc')->paginate(10, ['*'], 'inscritosPage');
-        $percursos = $evento->percursos()->get();
+        $percursos = $evento->percursos()->with('categorias')->orderBy('id')->get();
         $repasses = method_exists($evento, 'repasses') ? $evento->repasses()->orderBy('data_repassado', 'desc')->paginate(10, ['*'], 'repassesPage') : collect();
         $percursoModelos = $organizacao->percursoModelos()->orderBy('descricao')->get();
 
-        $dataEvento = $evento->data_evento->translatedFormat('l, d \de F \de Y');
-        $linkEvento = route('eventos.public.show', $evento->slug);
-        $textoWhatsapp = "🏆 *{$evento->nome}* 🏆\n🗓️ Data: {$dataEvento}\n👉 Inscreva-se: {$linkEvento}";
-        $textoInstagram = "🏆 {$evento->nome} 🏆\n🗓️ Data: {$dataEvento}\n🔗 Link na bio!";
+        $editandoContato = null;
+        if ($request->filled('editar_contato')) {
+            $editandoContato = $evento->eventoContatos()->find($request->editar_contato);
+        }
 
         return view('organizador.eventos.show', compact(
             'evento', 'organizacao', 'totalInscritos', 'totalPendentes', 'totalConfirmados', 'valorTotalRecebido',
@@ -183,8 +202,7 @@ class EventoOrganizadorController extends Controller
             'totalArrecadado', 'taxaPlataforma', 'totalRepassado', 'valorAReceber',
             'repasses',
             'percursoModelos',
-            'textoWhatsapp',
-            'textoInstagram'
+            'editandoContato'
         ));
     }
     
@@ -256,7 +274,7 @@ class EventoOrganizadorController extends Controller
         $evento->delete();
         return redirect()->route('organizador.eventos.index')->with('sucesso', 'Evento excluído com sucesso!');
     }
-    
+
     public function updateFinanceiro(Request $request, Evento $evento): RedirectResponse
     {
         $this->authorize('update', $evento);
@@ -271,6 +289,111 @@ class EventoOrganizadorController extends Controller
         ]);
         $evento->dadosBancarios()->updateOrCreate(['evento_id' => $evento->id], $validated);
         return redirect()->route('organizador.eventos.show', ['evento' => $evento, 'tab' => 'repasse'])->with('sucesso', 'Dados para repasse atualizados com sucesso!');
+    }
+
+    public function storeContato(Request $request, Evento $evento): RedirectResponse
+    {
+        $this->authorize('update', $evento);
+        $request->validate([
+            'nome' => 'required|string|max:255',
+            'telefone' => 'nullable|string|max:50',
+            'cargo' => 'nullable|string|max:100',
+        ]);
+        $ordem = $evento->eventoContatos()->max('ordem') ?? -1;
+        $evento->eventoContatos()->create([
+            'nome' => $request->input('nome'),
+            'telefone' => $request->input('telefone') ?: null,
+            'cargo' => $request->input('cargo') ?: null,
+            'ordem' => $ordem + 1,
+        ]);
+        return redirect()->route('organizador.eventos.show', ['evento' => $evento, 'tab' => 'contatos'])->with('sucesso', 'Contato adicionado.');
+    }
+
+    public function updateContato(Request $request, Evento $evento, EventoContato $evento_contato): RedirectResponse
+    {
+        $this->authorize('update', $evento);
+        if ($evento_contato->evento_id !== $evento->id) {
+            abort(404);
+        }
+        $request->validate([
+            'nome' => 'required|string|max:255',
+            'telefone' => 'nullable|string|max:50',
+            'cargo' => 'nullable|string|max:100',
+        ]);
+        $evento_contato->update([
+            'nome' => $request->input('nome'),
+            'telefone' => $request->input('telefone') ?: null,
+            'cargo' => $request->input('cargo') ?: null,
+        ]);
+        return redirect()->route('organizador.eventos.show', ['evento' => $evento, 'tab' => 'contatos'])->with('sucesso', 'Contato atualizado.');
+    }
+
+    public function destroyContato(Evento $evento, EventoContato $evento_contato): RedirectResponse
+    {
+        $this->authorize('update', $evento);
+        if ($evento_contato->evento_id !== $evento->id) {
+            abort(404);
+        }
+        $evento_contato->delete();
+        return redirect()->route('organizador.eventos.show', ['evento' => $evento, 'tab' => 'contatos'])->with('sucesso', 'Contato removido.');
+    }
+
+    public function updateRegulamento(Request $request, Evento $evento): RedirectResponse
+    {
+        $this->authorize('update', $evento);
+
+        if ($request->boolean('remover_pdf')) {
+            if ($evento->regulamento_arquivo) {
+                Storage::disk('public')->delete($evento->regulamento_arquivo);
+            }
+            $evento->update([
+                'regulamento_tipo' => null,
+                'regulamento_arquivo' => null,
+                'regulamento_texto' => null,
+                'regulamento_atualizado_em' => null,
+            ]);
+            return redirect()->route('organizador.eventos.show', ['evento' => $evento, 'tab' => 'regulamento'])->with('sucesso', 'Regulamento removido.');
+        }
+
+        $request->validate([
+            'regulamento_tipo' => 'required|in:pdf,texto',
+            'regulamento_arquivo' => 'nullable|file|mimes:pdf|max:10240',
+            'regulamento_texto' => 'nullable|string',
+        ]);
+
+        if ($request->input('regulamento_tipo') === 'pdf') {
+            if (!$request->hasFile('regulamento_arquivo') && !$evento->regulamento_arquivo) {
+                return back()->withErrors(['regulamento_arquivo' => 'Envie um arquivo PDF ou altere para "Texto no site".']);
+            }
+            if ($request->hasFile('regulamento_arquivo')) {
+                if ($evento->regulamento_arquivo) {
+                    Storage::disk('public')->delete($evento->regulamento_arquivo);
+                }
+                $file = $request->file('regulamento_arquivo');
+                $path = $file->store('eventos/regulamentos/' . $evento->id, 'public');
+                $evento->update([
+                    'regulamento_tipo' => 'pdf',
+                    'regulamento_arquivo' => $path,
+                    'regulamento_texto' => null,
+                    'regulamento_atualizado_em' => now(),
+                ]);
+            } else {
+                $evento->update(['regulamento_atualizado_em' => now()]);
+            }
+            return redirect()->route('organizador.eventos.show', ['evento' => $evento, 'tab' => 'regulamento'])->with('sucesso', $request->hasFile('regulamento_arquivo') ? 'Regulamento em PDF atualizado.' : 'Regulamento mantido.');
+        }
+
+        $antigoArquivo = $evento->regulamento_arquivo;
+        $evento->update([
+            'regulamento_tipo' => 'texto',
+            'regulamento_arquivo' => null,
+            'regulamento_texto' => $request->input('regulamento_texto') ? Purifier::clean($request->input('regulamento_texto')) : null,
+            'regulamento_atualizado_em' => now(),
+        ]);
+        if ($antigoArquivo) {
+            Storage::disk('public')->delete($antigoArquivo);
+        }
+        return redirect()->route('organizador.eventos.show', ['evento' => $evento, 'tab' => 'regulamento'])->with('sucesso', 'Regulamento em texto atualizado.');
     }
 
     public function confirmarCortesia(Inscricao $inscricao): RedirectResponse

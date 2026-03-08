@@ -178,19 +178,19 @@
                                 <div>
                                     <x-input-label for="data_evento" value="Data do Evento" class="text-slate-700 font-bold" />
                                     <x-text-input id="data_evento" name="data_evento" type="datetime-local" class="mt-1 block w-full border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" 
-                                        :value="old('data_evento', $evento->data_evento ? $evento->data_evento->format('Y-m-d\TH:i') : '')" required />
+                                        :value="old('data_evento', $evento->data_evento ? $evento->data_evento->format('Y-m-d\TH:i') : '')" min="2000-01-01T00:00" required />
                                     <x-input-error :messages="$errors->get('data_evento')" class="mt-2" />
                                 </div>
                                 <div>
                                     <x-input-label for="data_inicio_inscricoes" value="Abertura das Inscrições" class="text-slate-700 font-bold" />
                                     <x-text-input id="data_inicio_inscricoes" name="data_inicio_inscricoes" type="datetime-local" class="mt-1 block w-full border-slate-300 rounded-lg focus:ring-green-500 focus:border-green-500" 
-                                        :value="old('data_inicio_inscricoes', $evento->data_inicio_inscricoes ? $evento->data_inicio_inscricoes->format('Y-m-d\TH:i') : '')" required />
+                                        :value="old('data_inicio_inscricoes', $evento->data_inicio_inscricoes ? $evento->data_inicio_inscricoes->format('Y-m-d\TH:i') : '')" min="2000-01-01T00:00" required />
                                     <x-input-error :messages="$errors->get('data_inicio_inscricoes')" class="mt-2" />
                                 </div>
                                 <div>
                                     <x-input-label for="data_fim_inscricoes" value="Encerramento das Inscrições" class="text-slate-700 font-bold" />
                                     <x-text-input id="data_fim_inscricoes" name="data_fim_inscricoes" type="datetime-local" class="mt-1 block w-full border-slate-300 rounded-lg focus:ring-red-500 focus:border-red-500" 
-                                        :value="old('data_fim_inscricoes', $evento->data_fim_inscricoes ? $evento->data_fim_inscricoes->format('Y-m-d\TH:i') : '')" required />
+                                        :value="old('data_fim_inscricoes', $evento->data_fim_inscricoes ? $evento->data_fim_inscricoes->format('Y-m-d\TH:i') : '')" min="2000-01-01T00:00" required />
                                     <x-input-error :messages="$errors->get('data_fim_inscricoes')" class="mt-2" />
                                 </div>
                             </div>

@@ -23,10 +23,20 @@ class Atleta extends Model
         'sexo',
         'cidade_id',
         'estado_id',
+        'cep',
+        'logradouro',
+        'numero',
+        'complemento',
+        'bairro',
         'equipe_id',
         'tipo_sanguineo',
         'contato_emergencia_nome',
         'contato_emergencia_telefone',
+        'strava_id',
+        'strava_access_token',
+        'strava_refresh_token',
+        'strava_token_expires_at',
+        'strava_profile_photo_url',
     ];
 
     /**
@@ -74,5 +84,19 @@ class Atleta extends Model
     public function estado(): BelongsTo
     {
         return $this->belongsTo(Estado::class);
+    }
+
+    /**
+     * URL da foto a exibir no perfil: foto do Strava se estiver conectado, senão foto do cadastro.
+     */
+    public function getProfilePhotoUrlAttribute(): ?string
+    {
+        if (!empty($this->strava_profile_photo_url)) {
+            return $this->strava_profile_photo_url;
+        }
+        if (!empty($this->foto_url)) {
+            return asset('storage/' . $this->foto_url);
+        }
+        return null;
     }
 }

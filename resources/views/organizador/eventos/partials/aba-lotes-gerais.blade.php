@@ -1,120 +1,176 @@
-{{-- Envolvemos todo o componente em um x-data para controlar o estado do modal --}}
+{{-- Aba: Lotes de Inscrição Gerais --}}
 <div x-data="{
     showEditModal: false,
     editingLote: {},
     openEditModal(lote) {
-        // Clonamos o objeto para evitar alterações reativas indesejadas
-        this.editingLote = JSON.parse(JSON.stringify(lote));
-        
-        // Ajustamos o formato da data para o input datetime-local (YYYY-MM-DDTHH:mm)
-        this.editingLote.data_inicio = this.editingLote.data_inicio.slice(0, 16);
-        this.editingLote.data_fim = this.editingLote.data_fim.slice(0, 16);
-
+        this.editingLote = { ...lote };
         this.showEditModal = true;
     }
 }">
+    {{-- Cabeçalho da seção --}}
+    <div class="flex items-center gap-3 text-slate-700 mb-6">
+        <div class="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+            <i class="fa-solid fa-layer-group text-xl"></i>
+        </div>
+        <div>
+            <h3 class="text-lg font-bold text-slate-800">Lotes de Inscrição Gerais</h3>
+            <p class="text-sm text-slate-500">Defina períodos com valores diferentes (ex: 1º lote, lote promocional). A taxa do evento será aplicada sobre cada valor.</p>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {{-- Coluna da Lista --}}
-        <div class="lg:col-span-3 bg-white p-6 rounded-lg shadow-sm">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Lotes de Inscrição Gerais Cadastrados</h3>
-            <div class="space-y-3">
+        {{-- Lista de lotes cadastrados --}}
+        <div class="lg:col-span-3 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                    <i class="fa-solid fa-list mr-2 text-indigo-500"></i> Lotes cadastrados
+                    <span class="text-slate-400 font-normal normal-case ml-1">({{ $evento->lotesInscricaoGeral->count() }})</span>
+                </h4>
+            </div>
+            <div class="divide-y divide-slate-100">
                 @forelse ($evento->lotesInscricaoGeral->sortBy('data_inicio') as $lote)
-                    <div class="border rounded-md p-3 flex justify-between items-center">
-                        <div>
-                            <p class="font-semibold text-gray-800">
-                                {{ $lote->nome }} - 
-                                <span class="text-green-600">R$ {{ number_format($lote->valor, 2, ',', '.') }}</span>
-                                
-                                {{-- 🟢 AJUSTE AQUI: Exibindo a taxa concatenada --}}
-                                <span class="text-xs text-gray-500 font-normal ml-1">
-                                    (+ {{ number_format($evento->taxa_aplicada, 1, ',', '.') }}% taxa)
-                                </span>
+                    <div class="p-4 sm:p-5 hover:bg-slate-50/70 transition-colors flex flex-col sm:flex-row sm:items-center gap-3">
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-slate-800">
+                                {{ $lote->nome }}
                             </p>
-                            <p class="text-sm text-gray-500">
-                                De {{ $lote->data_inicio->format('d/m/Y H:i') }} até {{ $lote->data_fim->format('d/m/Y H:i') }}
+                            <div class="flex flex-wrap items-center gap-2 mt-1.5">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-sm font-bold bg-green-100 text-green-800 border border-green-200">
+                                    R$ {{ number_format($lote->valor, 2, ',', '.') }}
+                                </span>
+                                <span class="text-xs text-slate-500">
+                                    + {{ number_format($evento->taxa_aplicada, 1, ',', '.') }}% taxa
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
+                                <i class="fa-regular fa-calendar"></i>
+                                {{ $lote->data_inicio->format('d/m/Y H:i') }} → {{ $lote->data_fim->format('d/m/Y H:i') }}
                             </p>
                         </div>
-                        <div class="flex items-center space-x-4">
-                            {{-- BOTÃO DE EDITAR --}}
-                            <button @click.prevent="openEditModal({{ Js::from($lote) }})" class="text-blue-600 hover:text-blue-800 text-sm font-semibold">
-                                Editar
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button type="button" @click="openEditModal({{ Js::from([
+                                'id' => $lote->id,
+                                'nome' => $lote->nome,
+                                'valor' => (float) $lote->valor,
+                                'data_inicio' => $lote->data_inicio->format('Y-m-d\TH:i'),
+                                'data_fim' => $lote->data_fim->format('Y-m-d\TH:i'),
+                            ]) }})" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 text-sm font-semibold transition">
+                                <i class="fa-solid fa-pen-to-square text-xs"></i> Editar
                             </button>
-
-                            <form action="{{ route('organizador.lotes-gerais.destroy', [$evento, $lote]) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja remover este lote?');">
+                            <form action="{{ route('organizador.lotes-gerais.destroy', [$evento, $lote]) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja remover este lote?');" class="inline">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-semibold">Remover</button>
+                                <button type="submit" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-red-50 hover:border-red-200 hover:text-red-700 text-sm font-semibold transition">
+                                    <i class="fa-solid fa-trash-can text-xs"></i> Remover
+                                </button>
                             </form>
                         </div>
                     </div>
                 @empty
-                    <p class="text-sm text-gray-500">Nenhum lote geral cadastrado para este evento.</p>
+                    <div class="p-10 text-center">
+                        <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4 text-slate-300">
+                            <i class="fa-solid fa-layer-group text-3xl"></i>
+                        </div>
+                        <p class="text-slate-600 font-medium">Nenhum lote geral cadastrado</p>
+                        <p class="text-sm text-slate-500 mt-1">Adicione o primeiro lote no formulário ao lado.</p>
+                    </div>
                 @endforelse
             </div>
         </div>
 
-        {{-- Coluna do Formulário de Adição (Mantida igual) --}}
-        <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Adicionar Novo Lote Geral</h3>
-            <form action="{{ route('organizador.lotes-gerais.store', $evento) }}" method="POST" class="space-y-4">
+        {{-- Formulário: Adicionar novo lote --}}
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100 bg-indigo-50/50">
+                <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                    <i class="fa-solid fa-plus mr-2 text-indigo-600"></i> Novo lote geral
+                </h4>
+            </div>
+            <form action="{{ route('organizador.lotes-gerais.store', $evento) }}" method="POST" class="p-5 space-y-4">
                 @csrf
                 <div>
-                    <x-input-label for="nome_lote_geral" value="Nome do Lote (Ex: 1º Lote, Lote Promocional)" />
-                    <x-text-input id="nome_lote_geral" name="nome" type="text" class="mt-1 block w-full" required value="{{ old('nome') }}" />
+                    <label for="nome_lote_geral" class="block text-sm font-bold text-slate-700 mb-1.5">Nome do lote</label>
+                    <input id="nome_lote_geral" name="nome" type="text" value="{{ old('nome') }}" required placeholder="Ex: 1º Lote, Lote Promocional"
+                        class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-slate-900">
+                    @error('nome')
+                        <p class="mt-1.5 text-sm text-red-600 font-medium">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div>
-                    <x-input-label for="valor_lote_geral" value="Valor (R$)" />
-                    <x-text-input id="valor_lote_geral" name="valor" type="number" step="0.01" class="mt-1 block w-full" required value="{{ old('valor') }}" />
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <x-input-label for="data_inicio_lote_geral" value="Data de Início" />
-                        <x-text-input id="data_inicio_lote_geral" name="data_inicio" type="datetime-local" class="mt-1 block w-full" required value="{{ old('data_inicio') }}" />
-                    </div>
-                    <div>
-                        <x-input-label for="data_fim_lote_geral" value="Data de Fim" />
-                        <x-text-input id="data_fim_lote_geral" name="data_fim" type="datetime-local" class="mt-1 block w-full" required value="{{ old('data_fim') }}" />
-                    </div>
+                    <label for="valor_lote_geral" class="block text-sm font-bold text-slate-700 mb-1.5">Valor (R$)</label>
+                    <input id="valor_lote_geral" name="valor" type="number" step="0.01" min="0" value="{{ old('valor') }}" required placeholder="0,00"
+                        class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-slate-900">
+                    @error('valor')
+                        <p class="mt-1.5 text-sm text-red-600 font-medium">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div>
-                    <x-primary-button>Adicionar Lote Geral</x-primary-button>
+                    <label for="data_inicio_lote_geral" class="block text-sm font-bold text-slate-700 mb-1.5">Data e hora de início</label>
+                    <input id="data_inicio_lote_geral" name="data_inicio" type="datetime-local" value="{{ old('data_inicio') }}" required
+                        class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-slate-900">
+                    @error('data_inicio')
+                        <p class="mt-1.5 text-sm text-red-600 font-medium">{{ $message }}</p>
+                    @enderror
                 </div>
+                <div>
+                    <label for="data_fim_lote_geral" class="block text-sm font-bold text-slate-700 mb-1.5">Data e hora de fim</label>
+                    <input id="data_fim_lote_geral" name="data_fim" type="datetime-local" value="{{ old('data_fim') }}" required
+                        class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-slate-900">
+                    @error('data_fim')
+                        <p class="mt-1.5 text-sm text-red-600 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all">
+                    <i class="fa-solid fa-plus"></i> Adicionar lote geral
+                </button>
             </form>
         </div>
     </div>
 
-    {{-- MODAL DE EDIÇÃO (Mantido igual) --}}
-    <div x-show="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" @keydown.escape.window="showEditModal = false" x-cloak>
-        <div @click.away="showEditModal = false" class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">Editar Lote Geral</h3>
-            
-            <form x-show="editingLote.id" 
-                  :action="'{{ route('organizador.lotes-gerais.update', [$evento, 'LOTE_ID_PLACEHOLDER']) }}'.replace('LOTE_ID_PLACEHOLDER', editingLote.id)" 
-                  method="POST" class="space-y-4">
+    {{-- Modal: Editar lote --}}
+    <div x-show="showEditModal" x-cloak
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" @keydown.escape.window="showEditModal = false">
+        <div @click.away="showEditModal = false" class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Editar lote geral
+                </h3>
+            </div>
+            <form x-show="editingLote.id"
+                  :action="'{{ route('organizador.lotes-gerais.update', [$evento, 'LOTE_ID_PLACEHOLDER']) }}'.replace('LOTE_ID_PLACEHOLDER', editingLote.id)"
+                  method="POST" class="p-6 space-y-4">
                 @csrf
                 @method('PATCH')
                 <div>
-                    <x-input-label for="edit_nome_lote" value="Nome do Lote" />
-                    <x-text-input id="edit_nome_lote" name="nome" type="text" class="mt-1 block w-full" required x-model="editingLote.nome" />
+                    <label for="edit_nome_lote" class="block text-sm font-bold text-slate-700 mb-1.5">Nome do lote</label>
+                    <input id="edit_nome_lote" name="nome" type="text" required x-model="editingLote.nome"
+                        class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-slate-900">
                 </div>
                 <div>
-                    <x-input-label for="edit_valor_lote" value="Valor (R$)" />
-                    <x-text-input id="edit_valor_lote" name="valor" type="number" step="0.01" class="mt-1 block w-full" required x-model="editingLote.valor" />
+                    <label for="edit_valor_lote" class="block text-sm font-bold text-slate-700 mb-1.5">Valor (R$)</label>
+                    <input id="edit_valor_lote" name="valor" type="number" step="0.01" min="0" required x-model="editingLote.valor"
+                        class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-slate-900">
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <x-input-label for="edit_data_inicio_lote" value="Data de Início" />
-                        <x-text-input id="edit_data_inicio_lote" name="data_inicio" type="datetime-local" class="mt-1 block w-full" required x-model="editingLote.data_inicio" />
+                        <label for="edit_data_inicio_lote" class="block text-sm font-bold text-slate-700 mb-1.5">Início</label>
+                        <input id="edit_data_inicio_lote" name="data_inicio" type="datetime-local" required x-model="editingLote.data_inicio"
+                            class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-slate-900">
                     </div>
                     <div>
-                        <x-input-label for="edit_data_fim_lote" value="Data de Fim" />
-                        <x-text-input id="edit_data_fim_lote" name="data_fim" type="datetime-local" class="mt-1 block w-full" required x-model="editingLote.data_fim" />
+                        <label for="edit_data_fim_lote" class="block text-sm font-bold text-slate-700 mb-1.5">Fim</label>
+                        <input id="edit_data_fim_lote" name="data_fim" type="datetime-local" required x-model="editingLote.data_fim"
+                            class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-slate-900">
                     </div>
                 </div>
-
-                <div class="mt-6 flex justify-end gap-x-4 border-t pt-4">
-                    <button @click.prevent="showEditModal = false" type="button" class="text-sm font-semibold text-gray-700">Cancelar</button>
-                    <x-primary-button>Salvar Alterações</x-primary-button>
+                <div class="flex flex-wrap gap-3 pt-4 border-t border-slate-100">
+                    <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition">
+                        <i class="fa-solid fa-check"></i> Salvar alterações
+                    </button>
+                    <button type="button" @click="showEditModal = false" class="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                        Cancelar
+                    </button>
                 </div>
             </form>
         </div>

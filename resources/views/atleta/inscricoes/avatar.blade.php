@@ -168,7 +168,7 @@
                     eventDate: '{{ $inscricao->evento->data_evento->format("d/m/Y") }}',
                     athleteName: '{{ $nomeFormatado }}',
                     teamName: '{{ $inscricao->equipe->nome ?? "" }}',
-                    location: '{{ $inscricao->atleta->cidade->nome ?? "" }}{{ isset($inscricao->atleta->cidade->estado) ? "/" . $inscricao->atleta->cidade->estado->sigla : "" }}',
+                    location: '{{ $inscricao->atleta->cidade?->nome ?? "Exterior" }}{{ $inscricao->atleta->cidade?->estado ? "/" . $inscricao->atleta->cidade->estado->sigla : "" }}',
                 },
 
                 frameImage: null,

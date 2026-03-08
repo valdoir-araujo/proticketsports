@@ -1,25 +1,24 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
+        <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 Gestão de Campeonatos
             </h2>        
-            <div class="flex items-center space-x-2">
-                <a href="{{ route('organizador.dashboard') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ route('organizador.dashboard') }}" class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
                     &larr; Voltar
                 </a>
-                <a href="{{ route('organizador.campeonatos.create') }}" class="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm font-semibold transition">
-                    <i class="fa-solid fa-plus mr-2"></i>Novo Campeonato
+                <a href="{{ route('organizador.campeonatos.create') }}" class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm font-semibold transition">
+                    <i class="fa-solid fa-plus mr-2"></i> Novo Campeonato
                 </a>
             </div>
-
         </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
+                <div class="p-4 sm:p-6 text-gray-900">
                     
                     @if(session('sucesso'))
                         <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
@@ -39,8 +38,8 @@
                         </div>
                     @endif
 
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white">
+                    <div class="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 min-w-0" style="-webkit-overflow-scrolling: touch;">
+                        <table class="min-w-full bg-white" style="min-width: 600px;">
                             <thead class="bg-gray-200">
                                 <tr>
                                     <th class="py-3 px-4 text-left">Nome do Campeonato</th>

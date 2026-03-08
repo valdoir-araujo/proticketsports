@@ -13,7 +13,14 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'ProTicket Sports'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Tagline / Slogan (portal de eventos esportivos)
+    |--------------------------------------------------------------------------
+    */
+    'tagline' => env('APP_TAGLINE', 'O Portal de Eventos Esportivos Mais Completo do Brasil'),
 
     /*
     |--------------------------------------------------------------------------

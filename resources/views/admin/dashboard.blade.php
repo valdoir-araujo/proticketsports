@@ -15,6 +15,14 @@
                         <i class="fa-solid fa-shapes fa-fw mr-2"></i>
                         <span>Modalidades</span>
                     </a>
+                    <a href="{{ route('admin.parceiros.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150 ml-2">
+                        <i class="fa-solid fa-handshake fa-fw mr-2"></i>
+                        <span>Parceiros</span>
+                    </a>
+                    <a href="{{ route('admin.contatos.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150 ml-2">
+                        <i class="fa-solid fa-address-book fa-fw mr-2"></i>
+                        <span>Contatos</span>
+                    </a>
                 </div>
             </div>
 
@@ -124,6 +132,15 @@
                         </div>
                         <p class="font-semibold text-gray-700">Configurações</p>
                         <p class="text-sm text-gray-500">Definir taxas e parâmetros.</p>
+                    </a>
+
+                    {{-- Contatos da Página --}}
+                    <a href="{{ route('admin.contatos.index') }}" class="p-6 flex flex-col items-center justify-center text-center hover:bg-gray-50 transition">
+                        <div class="bg-gray-100 text-gray-600 p-4 rounded-full mb-3">
+                            <i class="fa-solid fa-address-book fa-2x"></i>
+                        </div>
+                        <p class="font-semibold text-gray-700">Contatos da Página</p>
+                        <p class="text-sm text-gray-500">Gerenciar contatos exibidos na página Fale Conosco.</p>
                     </a>
 
                     {{-- 7. NOVA ROTINA: Direitos de Acesso (ACL) --}}

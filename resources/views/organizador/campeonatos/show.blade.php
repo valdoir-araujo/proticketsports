@@ -24,16 +24,14 @@
                 </div>
 
                 {{-- Barra de Ações --}}
-                <div class="flex flex-wrap items-center gap-3 z-10">
-                    <a href="{{ route('organizador.campeonatos.regras.index', $campeonato) }}" class="inline-flex items-center px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-bold backdrop-blur-md border border-white/10 transition-all hover:-translate-y-0.5">
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3 z-10 w-full lg:w-auto">
+                    <a href="{{ route('organizador.campeonatos.regras.index', $campeonato) }}" class="inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-bold backdrop-blur-md border border-white/10 transition-all hover:-translate-y-0.5">
                         <i class="fa-solid fa-list-ol mr-2"></i> Regras
                     </a>
-                    
-                    <a href="{{ route('organizador.campeonatos.ranking.index', $campeonato) }}" class="inline-flex items-center px-4 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-900 rounded-xl text-sm font-bold shadow-lg shadow-yellow-500/30 transition-all hover:-translate-y-0.5 border border-yellow-400">
+                    <a href="{{ route('organizador.campeonatos.ranking.index', $campeonato) }}" class="inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-900 rounded-xl text-sm font-bold shadow-lg shadow-yellow-500/30 transition-all hover:-translate-y-0.5 border border-yellow-400">
                         <i class="fa-solid fa-trophy mr-2"></i> Ranking
                     </a>
-
-                    <a href="{{ route('organizador.campeonatos.edit', $campeonato) }}" class="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-900/50 transition-all hover:-translate-y-0.5 border border-blue-500/50">
+                    <a href="{{ route('organizador.campeonatos.edit', $campeonato) }}" class="inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-900/50 transition-all hover:-translate-y-0.5 border border-blue-500/50">
                         <i class="fa-solid fa-pen-to-square mr-2"></i> Editar
                     </a>
                 </div>
@@ -91,7 +89,7 @@
                     <p class="text-sm text-slate-500 mt-1 ml-5">Gerencie os eventos que compõem este circuito.</p>
                 </div>
                 
-                <a href="{{ route('organizador.eventos.create', ['campeonato_id' => $campeonato->id, 'org_id' => $campeonato->organizacao_id]) }}" class="inline-flex items-center px-5 py-2.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-sm font-bold shadow-md shadow-orange-500/30 transition-all hover:-translate-y-0.5">
+                <a href="{{ route('organizador.eventos.create', ['campeonato_id' => $campeonato->id, 'org_id' => $campeonato->organizacao_id]) }}" class="inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-sm font-bold shadow-md shadow-orange-500/30 transition-all hover:-translate-y-0.5 w-full sm:w-auto">
                     <i class="fa-solid fa-plus mr-2"></i> Adicionar Etapa
                 </a>
             </div>
@@ -105,19 +103,19 @@
                     <p class="text-slate-500 mt-2 max-w-md mx-auto">Este campeonato ainda não possui etapas cadastradas. Clique no botão acima para adicionar a primeira etapa.</p>
                 </div>
             @else
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                <div class="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 min-w-0" style="-webkit-overflow-scrolling: touch;">
+                    <table class="w-full text-left border-collapse min-w-[600px]">
                         <thead>
-                            <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-bold border-b border-slate-100">
+                            <tr class="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider font-bold border-b-2 border-slate-200">
                                 <th class="px-6 py-4">Etapa / Nome</th>
                                 <th class="px-6 py-4">Data</th>
                                 <th class="px-6 py-4">Status</th>
                                 <th class="px-6 py-4 text-right">Ações</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100">
+                        <tbody class="divide-y divide-slate-200">
                             @foreach($campeonato->eventos as $evento)
-                                <tr class="hover:bg-indigo-50/30 transition-colors group">
+                                <tr class="transition-colors group even:bg-slate-50/80 hover:bg-indigo-50/50">
                                     <td class="px-6 py-4">
                                         <div class="flex items-center">
                                             <div class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center mr-3 font-bold text-sm border border-indigo-100 group-hover:bg-indigo-600 group-hover:text-white transition-colors shadow-sm">

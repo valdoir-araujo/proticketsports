@@ -46,7 +46,7 @@ class CupomController extends Controller
             'codigo' => ['required', 'string', 'uppercase', 'max:50', Rule::unique('cupons')->where('evento_id', $evento->id)],
             'tipo_desconto' => ['required', Rule::in(['percentual', 'fixo'])],
             'valor' => ['required', 'numeric', 'min:0'],
-            'limite_usos' => ['nullable', 'integer', 'min:1'],
+            'limite_uso' => ['nullable', 'integer', 'min:1'],
             'data_validade' => ['nullable', 'date', 'after_or_equal:today'],
             'ativo' => ['nullable', 'boolean'],
         ]);
@@ -76,7 +76,7 @@ class CupomController extends Controller
             ],
             'tipo_desconto' => ['required', Rule::in(['percentual', 'fixo'])],
             'valor' => ['required', 'numeric', 'min:0'],
-            'limite_usos' => ['nullable', 'integer', 'min:1'],
+            'limite_uso' => ['nullable', 'integer', 'min:1'],
             'data_validade' => ['nullable', 'date', 'after_or_equal:today'],
             'ativo' => ['nullable', 'boolean'],
         ]);

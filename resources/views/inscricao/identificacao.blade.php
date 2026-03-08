@@ -98,6 +98,25 @@
             </div>
         </div>
         
+        @if($evento->eventoContatos->isNotEmpty())
+            <div class="mt-8 p-4 rounded-xl bg-slate-100 border border-slate-200">
+                <p class="text-xs font-bold text-slate-600 uppercase tracking-wide mb-3 flex items-center">
+                    <i class="fa-solid fa-address-card mr-2 text-slate-500"></i> Contato do organizador
+                </p>
+                <ul class="space-y-2 text-sm text-slate-700">
+                    @foreach($evento->eventoContatos as $contato)
+                        <li class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            @if($contato->nome)<span class="font-semibold">{{ $contato->nome }}</span>@endif
+                            @if($contato->cargo)<span class="text-slate-500">({{ $contato->cargo }})</span>@endif
+                            @if($contato->telefone)
+                                <a href="https://wa.me/55{{ preg_replace('/\D/', '', $contato->telefone) }}" target="_blank" rel="noopener" class="text-teal-600 hover:underline inline-flex items-center"><i class="fa-brands fa-whatsapp mr-1"></i>{{ $contato->telefone }}</a>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <div class="mt-8 text-center text-xs text-slate-400">
             <i class="fa-solid fa-lock mr-1"></i> Ambiente seguro. Seus dados estão protegidos.
         </div>

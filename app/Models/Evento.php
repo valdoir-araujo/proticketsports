@@ -34,6 +34,10 @@ class Evento extends Model
         'taxaservico', // CORRIGIDO: Deve ser igual ao banco (minúsculo)
         'lista_inscritos_publica',
         'limite_vagas',
+        'regulamento_tipo',
+        'regulamento_arquivo',
+        'regulamento_texto',
+        'regulamento_atualizado_em',
     ];
 
     protected $casts = [
@@ -42,6 +46,7 @@ class Evento extends Model
         'data_fim_inscricoes' => 'datetime',
         'lista_inscritos_publica' => 'boolean',
         'taxaservico' => 'decimal:2', // CORRIGIDO: Igual ao banco
+        'regulamento_atualizado_em' => 'datetime',
     ];
 
     // --- RELAÇÕES ---
@@ -114,6 +119,11 @@ class Evento extends Model
     public function lotesInscricaoGeral(): HasMany
     {
         return $this->hasMany(LoteInscricaoGeral::class);
+    }
+
+    public function eventoContatos(): HasMany
+    {
+        return $this->hasMany(EventoContato::class)->orderBy('ordem');
     }
 
     // --- MÉTODOS ---

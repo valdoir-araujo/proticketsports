@@ -1,99 +1,93 @@
 @extends('layouts.public')
 
-@section('title', 'Calendário de Eventos - Proticketsports')
+@section('title', 'Calendário de Eventos - ' . config('app.name'))
 
 @push('styles')
     <style>
         [x-cloak] { display: none !important; }
+        #modalidade_id { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
     </style>
 @endpush
 
 @section('content')
     {{-- Cabeçalho da Página --}}
     <header class="bg-gray-900 text-white py-16 relative overflow-hidden">
-        {{-- Background sutil para dar vida ao header --}}
         <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
-        
         <div class="max-w-7xl mx-auto px-4 text-center relative z-10">
             <h1 class="text-4xl md:text-5xl font-black uppercase tracking-tight">Calendário de Eventos</h1>
             <p class="text-lg mt-3 text-gray-300 max-w-2xl mx-auto">Confira as próximas provas, desafios e competições.</p>
         </div>
     </header>
 
-    <div class="max-w-7xl mx-auto p-4 md:p-8 min-h-screen">
-        
-        {{-- Secção de Filtros --}}
-        <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 mb-10 -mt-12 relative z-20">
-            <form method="GET" action="{{ route('eventos.public.index') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-                
-                {{-- Campo: Nome do Evento ou Cidade --}}
+    <div class="max-w-7xl mx-auto p-4 md:p-8 min-h-screen" 
+         x-data="{ searchOpen: false, isMobile: window.innerWidth < 768 }" 
+         @resize.window.debounce.300ms="isMobile = window.innerWidth < 768">
+
+        {{-- Título + Botão Filtrar (mobile) — mesmo padrão da welcome --}}
+        <div class="flex justify-between items-center mb-6 -mt-8 relative z-20">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-900 border-l-4 border-orange-500 pl-4">
+                Próximos Eventos
+            </h2>
+            <div class="md:hidden">
+                <button type="button" @click="searchOpen = !searchOpen" 
+                        class="flex items-center gap-2 text-sm font-semibold text-orange-600 p-2 rounded-md hover:bg-gray-100 transition-colors">
+                    <span x-text="searchOpen ? 'Fechar' : 'Filtrar'"></span>
+                </button>
+            </div>
+        </div>
+
+        {{-- Formulário de pesquisa (igual ao da welcome) --}}
+        <div x-show="!isMobile || searchOpen" 
+             x-cloak
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 -translate-y-4"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             class="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200 mb-10">
+            <form action="{{ route('eventos.public.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
                 <div class="lg:col-span-2">
                     <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Nome do Evento ou Cidade</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
-                        </span>
-                        <input type="text" name="search" id="search" 
-                               value="{{ request('search') }}" 
-                               class="block w-full rounded-md border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:border-orange-500 focus:ring-orange-500 pl-10 py-2.5 text-sm shadow-sm transition-all" 
-                               placeholder="Pesquisar...">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa-solid fa-search text-gray-400"></i></span>
+                        <input type="text" name="search" id="search" class="block w-full rounded-md border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:border-orange-500 focus:ring-orange-500 pl-10 py-3 text-base shadow-sm min-h-[44px]" 
+                               placeholder="Pesquisar..." value="{{ request('search') }}">
                     </div>
                 </div>
-
-                {{-- Campo: Modalidade --}}
                 <div>
                     <label for="modalidade_id" class="block text-sm font-medium text-gray-700 mb-1">Modalidade</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <i class="fa-solid fa-tags text-gray-400"></i>
-                        </span>
-                        <select name="modalidade_id" id="modalidade_id" class="block w-full rounded-md border-gray-300 bg-white text-gray-700 focus:border-orange-500 focus:ring-orange-500 pl-10 py-2.5 text-sm shadow-sm cursor-pointer appearance-none">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa-solid fa-tags text-gray-400"></i></span>
+                        <select name="modalidade_id" id="modalidade_id" class="block w-full rounded-md border-gray-300 bg-white text-gray-700 focus:border-orange-500 focus:ring-orange-500 pl-10 pr-10 py-3 text-base shadow-sm cursor-pointer appearance-none bg-no-repeat min-h-[44px]">
                             <option value="">Todas</option>
                             @php
-                                // PROTEÇÃO: Garante que $modalidades exista mesmo se o controller falhar
                                 $modalidades = isset($modalidades) ? $modalidades : \App\Models\Modalidade::orderBy('nome')->get();
                             @endphp
                             @foreach($modalidades as $modalidade)
-                                <option value="{{ $modalidade->id }}" {{ request('modalidade_id') == $modalidade->id ? 'selected' : '' }}>
-                                    {{ $modalidade->nome }}
-                                </option>
+                                <option value="{{ $modalidade->id }}" {{ request('modalidade_id') == $modalidade->id ? 'selected' : '' }}>{{ $modalidade->nome }}</option>
                             @endforeach
                         </select>
-                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <i class="fa-solid fa-chevron-down text-xs text-gray-400"></i>
-                        </span>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500">
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </div>
                     </div>
                 </div>
-
-                {{-- Campo: Data --}}
                 <div>
-                    <label for="data_inicio" class="block text-sm font-medium text-gray-700 mb-1">Data (A partir de)</label>
+                    <label for="data_inicio" class="block text-sm font-medium text-gray-700 mb-1">A partir de</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <i class="fa-regular fa-calendar text-gray-400"></i>
-                        </span>
-                        <input type="date" name="data_inicio" id="data_inicio" 
-                               value="{{ request('data_inicio') }}" 
-                               class="block w-full rounded-md border-gray-300 bg-white text-gray-700 focus:border-orange-500 focus:ring-orange-500 pl-10 py-2.5 text-sm shadow-sm">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa-regular fa-calendar text-gray-400"></i></span>
+                        <input type="date" name="data_inicio" id="data_inicio" class="block w-full rounded-md border-gray-300 bg-white text-gray-700 focus:border-orange-500 focus:ring-orange-500 pl-10 py-3 text-base shadow-sm min-h-[44px]" value="{{ request('data_inicio') }}">
                     </div>
                 </div>
-
-                {{-- Botão de Ação --}}
                 <div>
-                    <button type="submit" class="w-full flex items-center justify-center px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-md shadow-sm transition duration-300">
+                    <button type="submit" class="w-full flex items-center justify-center min-h-[44px] px-4 py-3 text-base bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-md shadow-sm transition duration-300">
                         <i class="fa-solid fa-filter mr-2"></i> Filtrar
                     </button>
                 </div>
-                
-                {{-- Link de Limpar --}}
-                @if(request()->anyFilled(['search', 'modalidade_id', 'data_inicio']))
-                    <div class="lg:col-span-5 flex justify-end mt-2">
-                        <a href="{{ route('eventos.public.index') }}" class="text-sm text-gray-500 hover:text-orange-600 underline decoration-dotted">
-                            Limpar filtros
-                        </a>
-                    </div>
-                @endif
             </form>
+            @if(request()->anyFilled(['search', 'modalidade_id', 'data_inicio']))
+                <div class="flex justify-end mt-3 pt-3 border-t border-gray-200">
+                    <a href="{{ route('eventos.public.index') }}" class="text-sm text-gray-500 hover:text-orange-600 underline decoration-dotted">Limpar filtros</a>
+                </div>
+            @endif
         </div>
 
         {{-- Grelha de Eventos --}}

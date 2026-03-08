@@ -15,6 +15,42 @@ class StoreInscricaoRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Normaliza o array de produtos antes da validação: o formulário pode enviar
+     * produtos[ID][quantidade] e produtos[ID][tamanho] mesmo quando o checkbox
+     * produtos[ID][id] não foi enviado (ex.: checkbox desmarcado). Mantemos apenas
+     * itens com id válido (ou chave numérica) e quantidade >= 1.
+     */
+    protected function prepareForValidation(): void
+    {
+        $produtos = $this->input('produtos', []);
+        if (! is_array($produtos)) {
+            return;
+        }
+
+        $normalized = [];
+        foreach ($produtos as $key => $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+            $id = $item['id'] ?? $key;
+            if ($id === '' || $id === null) {
+                continue;
+            }
+            $qty = (int) ($item['quantidade'] ?? 0);
+            if ($qty < 1) {
+                continue;
+            }
+            $normalized[] = [
+                'id' => (int) $id,
+                'quantidade' => $qty,
+                'tamanho' => $item['tamanho'] ?? null,
+            ];
+        }
+
+        $this->merge(['produtos' => $normalized]);
+    }
+
     public function rules(): array
     {
         return [

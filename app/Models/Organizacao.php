@@ -70,6 +70,6 @@ class Organizacao extends Model
     
     public function repasses(): HasMany
     {
-        return $this->hasMany(Repasse::class);
+        return $this->hasMany(Repasse::class, 'organizador_id');
     }
 }

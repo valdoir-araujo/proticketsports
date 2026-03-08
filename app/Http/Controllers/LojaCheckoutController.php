@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\PedidoLoja;
 use App\Models\ItemPedidoLoja;
 use App\Models\ProdutoOpcional; 
+use App\Models\Cupom;
 use App\Models\Evento;
 use App\Models\Inscricao;
 use App\Models\Atleta;
@@ -163,11 +164,45 @@ class LojaCheckoutController extends Controller
         }
 
         $resumo = $this->calcularTotalCarrinho($carrinho);
-        
+        $cupom = null;
+        $descontoCupom = 0;
+        $cupomCodigo = session('loja_cupom_codigo', '');
+        if ($cupomCodigo !== '') {
+            $cupom = Cupom::where('evento_id', $evento->id)
+                ->where('codigo', $cupomCodigo)
+                ->where('ativo', true)
+                ->where(function ($q) {
+                    $q->whereNull('data_validade')->orWhere('data_validade', '>=', now());
+                })
+                ->first();
+            if ($cupom && ($cupom->limite_uso === null || (int) $cupom->usos < (int) $cupom->limite_uso)) {
+                $descontoCupom = $cupom->tipo_desconto === 'percentual'
+                    ? $resumo['total'] * ($cupom->valor / 100)
+                    : min((float) $cupom->valor, $resumo['total']);
+            } else {
+                $cupom = null;
+                session()->forget('loja_cupom_codigo');
+            }
+        }
+        $totalGeral = max(0, $resumo['total'] - $descontoCupom);
+
         return view('loja.checkout', array_merge(
-            ['user' => $user, 'carrinho' => $carrinho, 'evento' => $evento, 'inscricao' => $inscricao],
-            ['subtotal' => $resumo['subtotal'], 'valorTaxa' => $resumo['taxa'], 'totalGeral' => $resumo['total']]
+            ['user' => $user, 'carrinho' => $carrinho, 'evento' => $evento, 'inscricao' => $inscricao, 'cupom' => $cupom, 'descontoCupom' => $descontoCupom],
+            ['subtotal' => $resumo['subtotal'], 'valorTaxa' => $resumo['taxa'], 'totalGeral' => $totalGeral]
         ));
+    }
+
+    /** POST: aplicar ou remover cupom no checkout da loja. */
+    public function aplicarCupom(Request $request)
+    {
+        $request->validate(['codigo_cupom' => 'nullable|string|max:50']);
+        $codigo = trim($request->input('codigo_cupom', ''));
+        if ($codigo === '') {
+            session()->forget('loja_cupom_codigo');
+            return redirect()->route('loja.checkout')->with('sucesso', 'Cupom removido.');
+        }
+        session(['loja_cupom_codigo' => $codigo]);
+        return redirect()->route('loja.checkout');
     }
 
     // --- ETAPA 3: SALVAR PEDIDO ---
@@ -179,21 +214,46 @@ class LojaCheckoutController extends Controller
         $carrinho = session('carrinho', []);
         if (empty($carrinho)) return redirect()->route('loja.index');
 
+        $primeiroItem = reset($carrinho);
+        $produto = ProdutoOpcional::find(array_key_first($carrinho));
+        $evento = $produto ? $produto->evento : null;
+        if (!$evento) return redirect()->route('loja.index');
+
         $resumo = $this->calcularTotalCarrinho($carrinho);
+        $cupom = null;
+        $descontoCupom = 0;
+        $cupomCodigo = session('loja_cupom_codigo', '');
+        if ($cupomCodigo !== '') {
+            $cupom = Cupom::where('evento_id', $evento->id)
+                ->where('codigo', $cupomCodigo)
+                ->where('ativo', true)
+                ->where(function ($q) {
+                    $q->whereNull('data_validade')->orWhere('data_validade', '>=', now());
+                })
+                ->first();
+            if ($cupom && ($cupom->limite_uso === null || (int) $cupom->usos < (int) $cupom->limite_uso)) {
+                $descontoCupom = $cupom->tipo_desconto === 'percentual'
+                    ? $resumo['total'] * ($cupom->valor / 100)
+                    : min((float) $cupom->valor, $resumo['total']);
+            } else {
+                $cupom = null;
+            }
+        }
+        $totalFinal = max(0, $resumo['total'] - $descontoCupom);
 
         DB::beginTransaction();
         try {
             $pedido = new PedidoLoja();
             $pedido->user_id = $user->id;
             $pedido->evento_id = $resumo['evento_id'];
-            $pedido->valor_total = $resumo['total'];
+            $pedido->valor_total = $totalFinal;
             $pedido->taxa_servico = $resumo['taxa'];
+            $pedido->valor_desconto = $descontoCupom;
             $pedido->status = 'pendente';
-            
+            if ($cupom) $pedido->cupom_id = $cupom->id;
             if ($request->has('inscricao_id')) {
-                 $pedido->inscricao_id = $request->inscricao_id; 
+                 $pedido->inscricao_id = $request->inscricao_id;
             }
-            
             $pedido->save();
 
             foreach ($carrinho as $id => $item) {
@@ -211,6 +271,7 @@ class LojaCheckoutController extends Controller
 
             DB::commit();
             session()->forget('carrinho');
+            session()->forget('loja_cupom_codigo');
             session()->save();
             
             return redirect()->route('loja.pedido.pagamento', ['pedido' => $pedido->id]);
@@ -264,7 +325,13 @@ class LojaCheckoutController extends Controller
         ]);
 
         $pedido = PedidoLoja::findOrFail($request->pedido_id);
-        $user = User::find($pedido->user_id);
+
+        // 2. Autorização: apenas o dono do pedido pode processar pagamento (sessão ou auth)
+        $user = $this->getCheckoutUser();
+        if (!$user || (int) $user->id !== (int) $pedido->user_id) {
+            Log::warning('Tentativa de pagamento em pedido alheio.', ['pedido_id' => $pedido->id, 'ip' => $request->ip()]);
+            return response()->json(['status' => 'error', 'message' => 'Acesso negado a este pedido.'], 403);
+        }
 
         $isPix = (strtolower((string) $paymentMethodId) === 'pix');
 
@@ -339,6 +406,9 @@ class LojaCheckoutController extends Controller
             // 5. Analisa a Resposta
             if ($payment->status === 'approved') {
                 $pedido->update(['status' => 'pago', 'gateway_payment_id' => $payment->id]);
+                if ($pedido->cupom_id) {
+                    Cupom::where('id', $pedido->cupom_id)->increment('usos');
+                }
                 return response()->json(['status' => 'approved', 'id' => $payment->id]);
             } 
             elseif ($payment->status === 'pending' || $payment->status === 'in_process') {
@@ -385,11 +455,19 @@ class LojaCheckoutController extends Controller
 
     public function sucesso(PedidoLoja $pedido)
     {
+        $user = $this->getCheckoutUser();
+        if (!$user || (int) $user->id !== (int) $pedido->user_id) {
+            return redirect()->route('loja.identificacao')->with('error', 'Acesso negado. Identifique-se para ver este pedido.');
+        }
         return view('loja.sucesso', compact('pedido'));
     }
 
     public function pendente(PedidoLoja $pedido)
     {
+        $user = $this->getCheckoutUser();
+        if (!$user || (int) $user->id !== (int) $pedido->user_id) {
+            return redirect()->route('loja.identificacao')->with('error', 'Acesso negado. Identifique-se para ver este pedido.');
+        }
         return view('loja.pendente', compact('pedido'));
     }
 

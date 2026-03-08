@@ -42,6 +42,7 @@ class InscricaoController extends Controller
         if ($user && !$user->atleta && !$user->hasRole('admin')) {
             return redirect()->route('profile.edit')->with('info', 'Complete seu perfil de atleta para se inscrever.');
         }
+        $evento->load('eventoContatos');
         return view('inscricao.identificacao', compact('evento'));
     }
 
@@ -161,77 +162,9 @@ class InscricaoController extends Controller
         $anoNascimentoAtleta = $atleta->data_nascimento ? Carbon::parse($atleta->data_nascimento)->year : now()->year;
         $idadeNoEvento = $anoDoEvento - $anoNascimentoAtleta;
         
-        $sexoAtleta = strtolower($atleta->sexo);
+        $sexoAtleta = strtolower($atleta->sexo ?? 'unissex');
+        $percursosFiltrados = $this->filtrarPercursosPorAtleta($percursosDoEvento, $idadeNoEvento, $sexoAtleta, $evento);
 
-        $percursosFiltrados = $percursosDoEvento->map(function ($percurso) use ($idadeNoEvento, $sexoAtleta, $evento) {
-            $categoriasFiltradas = $percurso->categorias->filter(function ($categoria) use ($idadeNoEvento, $sexoAtleta) {
-                
-                $generoCategoria = strtolower($categoria->genero);
-                $nomeCategoria = strtolower($categoria->nome);
-                $isDupla = Str::contains($nomeCategoria, ['dupla', 'mista'], true);
-
-                $generoValido = false;
-
-                if (in_array($generoCategoria, ['unissex', 'misto'])) {
-                    $generoValido = true;
-                } 
-                elseif (Str::contains($nomeCategoria, 'mista')) {
-                    $generoValido = true;
-                }
-                elseif ($isDupla) {
-                    if (Str::contains($nomeCategoria, 'feminina') && $sexoAtleta === 'feminino') {
-                        $generoValido = true;
-                    }
-                    elseif (Str::contains($nomeCategoria, 'masculina') && $sexoAtleta === 'masculino') {
-                        $generoValido = true;
-                    }
-                    elseif ($generoCategoria === $sexoAtleta) {
-                          $generoValido = true;
-                    }
-                }
-                elseif ($generoCategoria === $sexoAtleta) {
-                    $generoValido = true;
-                }
-
-                $idadeValida = true;
-                if (!$isDupla) {
-                    if ($categoria->idade_minima !== null && $idadeNoEvento < $categoria->idade_minima) { $idadeValida = false; }
-                    if ($categoria->idade_maxima !== null && $idadeNoEvento > $categoria->idade_maxima) { $idadeValida = false; }
-                }
-
-                return $generoValido && $idadeValida;
-
-            })->map(function ($categoria) use ($evento) {
-                
-                // 🟢 CORREÇÃO DA LÓGICA DE PREÇO: PRIORIDADE PARA CATEGORIA
-                
-                // 1. Tenta buscar um lote ESPECÍFICO desta categoria que esteja vigente agora
-                $loteAtivo = $categoria->lotesInscricao()
-                    ->where('data_inicio', '<=', now())
-                    ->where('data_fim', '>=', now())
-                    ->first();
-
-                // 2. Se NÃO achar lote específico, busca o lote GERAL do evento
-                if (!$loteAtivo) {
-                    $loteAtivo = $evento->lotesInscricaoGeral()
-                        ->where('data_inicio', '<=', now())
-                        ->where('data_fim', '>=', now())
-                        ->first();
-                }
-
-                $categoria->valor_atual = $loteAtivo ? $loteAtivo->valor : null;
-                return $categoria;
-
-            })->filter(function ($categoria) {
-                return $categoria->valor_atual !== null;
-            });
-
-            $percurso->setRelation('categorias', $categoriasFiltradas);
-            return $percurso;
-        })->filter(function ($percurso) {
-            return $percurso->categorias->isNotEmpty();
-        });
-        
         $equipes = Equipe::orderBy('nome')->get();
         
         // --- CÁLCULO DA TAXA ---
@@ -598,7 +531,7 @@ class InscricaoController extends Controller
     public function show(Inscricao $inscricao): View
     {
         if ($inscricao->atleta->user_id !== auth()->id()) { abort(403); }
-        $inscricao->load('evento', 'categoria', 'loteInscricao', 'produtosOpcionais');
+        $inscricao->load('evento.eventoContatos', 'categoria', 'loteInscricao', 'produtosOpcionais', 'resultado');
         return view('inscricao.show', compact('inscricao'));
     }
 
@@ -615,16 +548,32 @@ class InscricaoController extends Controller
 
     public function edit(Inscricao $inscricao): View
     {
-        if ($inscricao->atleta->user_id !== Auth::id()) {
+        $podeEditar = $inscricao->atleta->user_id === Auth::id();
+        if (! $podeEditar) {
+            $organizacao = $inscricao->evento->organizacao ?? null;
+            $podeEditar = $organizacao && Auth::user()->organizacoes->contains($organizacao);
+        }
+        if (! $podeEditar) {
             abort(403);
         }
 
         $evento = $inscricao->evento;
+        $evento->load('lotesInscricaoGeral');
+        $atleta = $inscricao->atleta;
+
+        $percursosDoEvento = $evento->percursos()->with(['categorias.lotesInscricao'])->get();
+        $anoDoEvento = Carbon::parse($evento->data_evento)->year;
+        $anoNascimentoAtleta = $atleta->data_nascimento ? Carbon::parse($atleta->data_nascimento)->year : now()->year;
+        $idadeNoEvento = $anoDoEvento - $anoNascimentoAtleta;
+        $sexoAtleta = strtolower($atleta->sexo ?? 'unissex');
+
+        $percursosFiltrados = $this->filtrarPercursosPorAtleta($percursosDoEvento, $idadeNoEvento, $sexoAtleta, $evento);
+
         $produtosOpcionais = $evento->produtosOpcionais()->where('ativo', true)->get();
         $equipes = Equipe::orderBy('nome')->get();
         $inscricao->load('produtosOpcionais');
 
-        return view('inscricao.edit', compact('inscricao', 'evento', 'produtosOpcionais', 'equipes'));
+        return view('inscricao.edit', compact('inscricao', 'evento', 'percursosFiltrados', 'produtosOpcionais', 'equipes'));
     }
 
     public function update(UpdateInscricaoRequest $request, Inscricao $inscricao): RedirectResponse
@@ -673,14 +622,17 @@ class InscricaoController extends Controller
             return back()->withErrors(['cupom' => 'Cupom inválido ou expirado.']);
         }
 
+        if ($cupom->limite_uso !== null && (int) $cupom->usos >= (int) $cupom->limite_uso) {
+            return back()->withErrors(['cupom' => 'Este cupom atingiu o limite de usos.']);
+        }
+
         $desconto = 0;
         
         // 🟢 CORRIGIDO: Usa 'tipo_desconto' (enum) e 'percentual'
         if ($cupom->tipo_desconto === 'percentual') {
             $desconto = $inscricao->valor_original * ($cupom->valor / 100);
         } else {
-            // Assume fixo se não for percentual
-            $desconto = $cupom->valor;
+            $desconto = min((float) $cupom->valor, (float) $inscricao->valor_original);
         }
 
         $novoValor = max(0, $inscricao->valor_original - $desconto) + $inscricao->taxa_plataforma;
@@ -711,5 +663,64 @@ class InscricaoController extends Controller
         }
 
         return 0.0;
+    }
+
+    /**
+     * Filtra percursos do evento por idade/sexo do atleta e adiciona valor_atual às categorias.
+     */
+    private function filtrarPercursosPorAtleta($percursosDoEvento, int $idadeNoEvento, string $sexoAtleta, Evento $evento)
+    {
+        return $percursosDoEvento->map(function ($percurso) use ($idadeNoEvento, $sexoAtleta, $evento) {
+            $categoriasFiltradas = $percurso->categorias->filter(function ($categoria) use ($idadeNoEvento, $sexoAtleta) {
+                $generoCategoria = strtolower($categoria->genero ?? 'unissex');
+                $nomeCategoria = strtolower($categoria->nome ?? '');
+                $isDupla = Str::contains($nomeCategoria, ['dupla', 'mista'], true);
+                $generoValido = false;
+                if (in_array($generoCategoria, ['unissex', 'misto'])) {
+                    $generoValido = true;
+                } elseif (Str::contains($nomeCategoria, 'mista')) {
+                    $generoValido = true;
+                } elseif ($isDupla) {
+                    if (Str::contains($nomeCategoria, 'feminina') && $sexoAtleta === 'feminino') {
+                        $generoValido = true;
+                    } elseif (Str::contains($nomeCategoria, 'masculina') && $sexoAtleta === 'masculino') {
+                        $generoValido = true;
+                    } elseif ($generoCategoria === $sexoAtleta) {
+                        $generoValido = true;
+                    }
+                } elseif ($generoCategoria === $sexoAtleta) {
+                    $generoValido = true;
+                }
+                $idadeValida = true;
+                if (! $isDupla) {
+                    if ($categoria->idade_minima !== null && $idadeNoEvento < $categoria->idade_minima) {
+                        $idadeValida = false;
+                    }
+                    if ($categoria->idade_maxima !== null && $idadeNoEvento > $categoria->idade_maxima) {
+                        $idadeValida = false;
+                    }
+                }
+                return $generoValido && $idadeValida;
+            })->map(function ($categoria) use ($evento) {
+                $loteAtivo = $categoria->lotesInscricao()
+                    ->where('data_inicio', '<=', now())
+                    ->where('data_fim', '>=', now())
+                    ->first();
+                if (! $loteAtivo) {
+                    $loteAtivo = $evento->lotesInscricaoGeral()
+                        ->where('data_inicio', '<=', now())
+                        ->where('data_fim', '>=', now())
+                        ->first();
+                }
+                $categoria->valor_atual = $loteAtivo ? $loteAtivo->valor : null;
+                return $categoria;
+            })->filter(function ($categoria) {
+                return $categoria->valor_atual !== null;
+            });
+            $percurso->setRelation('categorias', $categoriasFiltradas);
+            return $percurso;
+        })->filter(function ($percurso) {
+            return $percurso->categorias->isNotEmpty();
+        });
     }
 }

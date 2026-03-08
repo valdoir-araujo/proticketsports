@@ -5,24 +5,51 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\RedirectResponse;
 use Carbon\Carbon;
 
 class StravaController extends Controller
 {
     /**
+     * URL de callback usada na autorização e na troca de token.
+     * Se STRAVA_REDIRECT_URI não estiver definida, usa APP_URL + /strava/callback.
+     */
+    private function getRedirectUri(): string
+    {
+        $config = config('services.strava.redirect_uri');
+        if (!empty($config)) {
+            return $config;
+        }
+        return url(route('strava.callback', [], false));
+    }
+
+    /**
      * Redireciona o utilizador para a página de autorização do Strava.
+     * Apenas utilizadores com perfil de atleta podem conectar.
      */
     public function connect(): RedirectResponse
     {
+        $user = Auth::user();
+        if (!$user->atleta) {
+            return redirect()->route('profile.edit')
+                ->withErrors('Complete seu perfil de atleta antes de conectar o Strava.');
+        }
+
         $stravaConfig = config('services.strava');
+        if (empty($stravaConfig['client_id'])) {
+            return redirect()->route('profile.edit')
+                ->withErrors('Strava não está configurado. Contacte o administrador.');
+        }
+
+        $redirectUri = $this->getRedirectUri();
 
         $queryParams = http_build_query([
             'client_id' => $stravaConfig['client_id'],
-            'redirect_uri' => $stravaConfig['redirect_uri'],
+            'redirect_uri' => $redirectUri,
             'response_type' => 'code',
             'approval_prompt' => 'auto',
-            'scope' => 'read_all,activity:read_all', // Solicita permissão para ler perfil e atividades
+            'scope' => 'read,activity:read',
         ]);
 
         return redirect()->away('https://www.strava.com/oauth/authorize?' . $queryParams);
@@ -33,42 +60,70 @@ class StravaController extends Controller
      */
     public function callback(Request $request): RedirectResponse
     {
-        // Verifica se o Strava retornou um erro
         if ($request->has('error')) {
             return redirect()->route('profile.edit')->withErrors('A conexão com o Strava foi cancelada.');
         }
 
-        $stravaConfig = config('services.strava');
+        if (!$request->filled('code')) {
+            return redirect()->route('profile.edit')->withErrors('Resposta inválida do Strava. Tente conectar novamente.');
+        }
+
         $user = Auth::user();
         $atleta = $user->atleta;
 
-        // Troca o código de autorização temporário pelos tokens de acesso permanentes
-        $response = Http::post('https://www.strava.com/oauth/token', [
+        if (!$atleta) {
+            return redirect()->route('profile.edit')
+                ->withErrors('Complete seu perfil de atleta antes de conectar o Strava.');
+        }
+
+        $stravaConfig = config('services.strava');
+        $redirectUri = $this->getRedirectUri();
+
+        // Pequeno atraso para evitar falha intermitente na validação do code no Strava
+        usleep(500000); // 0.5s
+
+        $response = Http::asForm()->post('https://www.strava.com/oauth/token', [
             'client_id' => $stravaConfig['client_id'],
             'client_secret' => $stravaConfig['client_secret'],
             'code' => $request->code,
             'grant_type' => 'authorization_code',
+            'redirect_uri' => $redirectUri,
         ]);
 
         if ($response->failed()) {
-            return redirect()->route('profile.edit')->withErrors('Não foi possível obter os tokens do Strava. Tente novamente.');
+            Log::warning('Strava token exchange failed', [
+                'user_id' => $user->id,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            return redirect()->route('profile.edit')->withErrors(
+                'Não foi possível obter os tokens do Strava. Verifique se a URL de callback no painel do Strava é: ' . $redirectUri
+            );
         }
 
         $stravaData = $response->json();
+        if (empty($stravaData['athlete']['id']) || empty($stravaData['access_token'])) {
+            return redirect()->route('profile.edit')->withErrors('Resposta inválida do Strava. Tente novamente.');
+        }
 
-        // Salva os dados do Strava no perfil do atleta
+        $athlete = $stravaData['athlete'];
+        $profilePhotoUrl = $athlete['profile'] ?? $athlete['profile_medium'] ?? null;
+
         $atleta->update([
-            'strava_id' => $stravaData['athlete']['id'],
+            'strava_id' => $athlete['id'],
             'strava_access_token' => $stravaData['access_token'],
-            'strava_refresh_token' => $stravaData['refresh_token'],
-            'strava_token_expires_at' => Carbon::createFromTimestamp($stravaData['expires_at']),
+            'strava_refresh_token' => $stravaData['refresh_token'] ?? null,
+            'strava_token_expires_at' => isset($stravaData['expires_at'])
+                ? Carbon::createFromTimestamp($stravaData['expires_at'])
+                : null,
+            'strava_profile_photo_url' => $profilePhotoUrl,
         ]);
 
         return redirect()->route('profile.edit')->with('sucesso', 'Sua conta foi conectada ao Strava com sucesso!');
     }
 
     /**
-     * Desconecta a conta do Strava do perfil do atleta.
+     * Desconecta a conta do Strava do perfil do atleta (por utilizador).
      */
     public function disconnect(): RedirectResponse
     {
@@ -80,6 +135,7 @@ class StravaController extends Controller
                 'strava_access_token' => null,
                 'strava_refresh_token' => null,
                 'strava_token_expires_at' => null,
+                'strava_profile_photo_url' => null,
             ]);
         }
 

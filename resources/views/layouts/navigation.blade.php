@@ -84,9 +84,9 @@
                     </div>
                 </div>
                 
-                {{-- Botão "Hamburger" para Mobile --}}
+                {{-- Botão "Hamburger" para Mobile (área de toque >= 44px) --}}
                 <div class="-mr-2 flex md:hidden">
-                    <button @click="open = !open" type="button" class="relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-100">
+                    <button @click="open = !open" type="button" :aria-expanded="open" aria-controls="mobile-menu" class="relative inline-flex items-center justify-center rounded-lg p-3 min-w-[44px] min-h-[44px] text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 active:bg-gray-200 transition-colors">
                         <span class="sr-only">Abrir menu principal</span>
                         <i class="fa-solid fa-bars h-6 w-6" :class="{'hidden': open, 'block': !open }"></i>
                         <i class="fa-solid fa-xmark h-6 w-6" :class="{'block': open, 'hidden': !open }"></i>
@@ -95,44 +95,44 @@
             </div>
 
             {{-- Painel do menu mobile --}}
-            <div x-show="open" class="md:hidden" id="mobile-menu" style="display: none;">
-                <div class="space-y-2 px-2 pb-3 pt-2 sm:px-3">
+            <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="md:hidden border-t border-gray-100" id="mobile-menu">
+                <div class="space-y-1 px-3 pb-4 pt-3 sm:px-4">
                     @auth
                         {{-- BOTÕES MOBILE INTELIGENTES --}}
                         @if($isOrganizador)
                             @if($isOrganizerArea)
-                                <a href="{{ route('atleta.inscricoes') }}" class="block text-center rounded-md px-3 py-3 text-base font-bold text-gray-700 bg-orange-100 hover:bg-orange-200 mb-2">
+                                <a href="{{ route('atleta.inscricoes') }}" class="block text-center rounded-lg px-4 py-3 text-base font-bold text-gray-700 bg-orange-100 hover:bg-orange-200 mb-2 min-h-[44px] flex items-center justify-center">
                                     <i class="fa-solid fa-person-running mr-2"></i> Ir para Área do Atleta
                                 </a>
                             @else
-                                <a href="{{ route('organizador.dashboard') }}" class="block text-center rounded-md px-3 py-3 text-base font-bold text-white bg-indigo-600 hover:bg-indigo-700 mb-2">
+                                <a href="{{ route('organizador.dashboard') }}" class="block text-center rounded-lg px-4 py-3 text-base font-bold text-white bg-indigo-600 hover:bg-indigo-700 mb-2 min-h-[44px] flex items-center justify-center">
                                     <i class="fa-solid fa-briefcase mr-2"></i> Acessar Painel Organizador
                                 </a>
                             @endif
                         @endif
 
                         @if($user->isAdmin())
-                            <a href="{{ route('admin.dashboard') }}" class="block text-center rounded-md px-3 py-2 text-base font-medium text-red-600 bg-red-50 hover:bg-red-100 font-bold border border-red-200 mb-2">
+                            <a href="{{ route('admin.dashboard') }}" class="block text-center rounded-lg px-4 py-3 text-base font-medium text-red-600 bg-red-50 hover:bg-red-100 font-bold border border-red-200 mb-2 min-h-[44px] flex items-center justify-center">
                                 <i class="fa-solid fa-user-shield mr-2"></i> Painel Admin
                             </a>
                         @endif
 
                         {{-- CORREÇÃO AQUI: Link "Início" apontando para a rota correta do atleta --}}
-                        <a href="{{ route('atleta.inscricoes') }}" class="block text-center rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100">Início</a>
+                        <a href="{{ route('atleta.inscricoes') }}" class="block rounded-lg px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 min-h-[44px] flex items-center justify-center">Início</a>
                         
-                        <a href="{{ route('profile.edit') }}" class="block text-center rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100">Meu Perfil</a>
+                        <a href="{{ route('profile.edit') }}" class="block rounded-lg px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 min-h-[44px] flex items-center justify-center">Meu Perfil</a>
                         
                         <form method="POST" action="{{ route('logout') }}" class="pt-2 border-t border-gray-100 mt-2">
                             @csrf
                             <a href="{{ route('logout') }}" 
                             onclick="event.preventDefault(); this.closest('form').submit();" 
-                            class="block text-center rounded-md px-3 py-2 text-base font-medium text-red-600 hover:bg-red-50">
+                            class="block rounded-lg px-4 py-3 text-base font-medium text-red-600 hover:bg-red-50 min-h-[44px] flex items-center justify-center">
                             Sair
                             </a>
                         </form>
                     @else
-                        <a href="{{ route('login') }}" class="block rounded-md px-3 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 text-center">Entrar</a>
-                        <a href="{{ route('register') }}" class="block rounded-md px-3 py-3 text-base font-medium text-white bg-orange-500 hover:bg-orange-600 text-center mt-2">Cadastrar</a>
+                        <a href="{{ route('login') }}" class="block rounded-lg px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 text-center min-h-[44px] flex items-center justify-center">Entrar</a>
+                        <a href="{{ route('register') }}" class="block rounded-lg px-4 py-3 text-base font-medium text-white bg-orange-500 hover:bg-orange-600 text-center mt-2 min-h-[44px] flex items-center justify-center">Cadastrar</a>
                     @endauth
                 </div>
             </div>

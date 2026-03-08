@@ -46,7 +46,7 @@
                         <span>PIX</span>
                         <div x-show="method === 'pix'" class="absolute top-2 right-2 text-green-600"><i class="fa-solid fa-circle-check"></i></div>
                     </button>
-                    <button type="button" @click="method = 'card'; errorMessage = ''; $nextTick(() => { if (typeof initCardInscricao === 'function') initCardInscricao(); })"
+                    <button type="button" @click="method = 'card'; errorMessage = ''; $nextTick(() => { setTimeout(() => { if (typeof initCardInscricao === 'function') initCardInscricao(); }, 350); })"
                         :class="method === 'card' ? 'border-blue-500 bg-blue-50 text-blue-800 ring-1 ring-blue-500' : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-slate-50'"
                         class="relative py-4 px-4 rounded-xl border-2 font-bold transition-all flex flex-col items-center justify-center gap-2 shadow-sm h-24">
                         <i class="fa-regular fa-credit-card text-2xl"></i>
@@ -55,7 +55,7 @@
                     </button>
                 </div>
 
-                {{-- PIX (igual à loja: botão Gerar QR → exibe QR e copia e cola) --}}
+                {{-- PIX --}}
                 <div x-show="method === 'pix'" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
                     <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-8 text-center">
                         <div x-show="!qrCodeBase64">
@@ -95,17 +95,16 @@
                     </div>
                 </div>
 
-                {{-- Cartão (Brick carregado ao selecionar aba, igual à loja) --}}
+                {{-- Cartão: Card Payment Brick (somente cartão, mais estável que o Payment Brick) --}}
                 <div x-show="method === 'card'" x-transition:enter="transition ease-out duration-300" style="display: none;" x-cloak>
-                    <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6 relative min-h-[320px]">
+                    <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6 relative min-h-[380px]">
                         <div id="loading-card-inscricao" class="absolute inset-0 flex items-center justify-center bg-white z-20 rounded-xl">
                             <div class="flex flex-col items-center">
                                 <i class="fa-solid fa-circle-notch fa-spin text-3xl text-blue-500 mb-2"></i>
-                                <span class="text-sm text-slate-500">Carregando formulário seguro...</span>
+                                <span class="text-sm text-slate-500">Carregando formulário de cartão...</span>
                             </div>
                         </div>
-                        <div id="cardPaymentBrick_container_inscricao" class="min-h-[280px]"></div>
-                        <p class="text-xs text-slate-400 mt-3">Se o formulário não aparecer, use <strong>PIX</strong> acima — é rápido e seguro.</p>
+                        <div id="cardPaymentBrick_container_inscricao" class="min-h-[340px] w-full"></div>
                     </div>
                 </div>
 
@@ -167,11 +166,11 @@
     window.paymentDataInscricao = function() {
         return {
             method: 'pix',
+            errorMessage: '',
             loading: false,
             qrCode: '',
             qrCodeBase64: '',
             copied: false,
-            errorMessage: '',
             init: function() {
                 if (!publicKeyInscricao) this.errorMessage = 'Chave do Mercado Pago não configurada.';
             },
@@ -237,36 +236,27 @@
         var container = document.getElementById('cardPaymentBrick_container_inscricao');
         if (!container) return;
         if (window.location.protocol !== 'https:' && !/localhost|127\.0\.0\.1/.test(window.location.hostname)) {
-            setCardErrorInscricao('Pagamento com cartão só está disponível em ambiente seguro (HTTPS). Por favor, use PIX para pagar.');
-            var loadingEl = document.getElementById('loading-card-inscricao');
+            setCardErrorInscricao('Pagamento com cartão disponível apenas em HTTPS. Use PIX para pagar.');
+            document.getElementById('loading-card-inscricao').style.display = 'none';
+            return;
+        }
+        var loadingEl = document.getElementById('loading-card-inscricao');
+        var amount = Number(valorInscricao);
+        if (!amount || amount <= 0) {
+            setCardErrorInscricao('Valor inválido. Use PIX ou contate o suporte.');
             if (loadingEl) loadingEl.style.display = 'none';
             return;
         }
-        // Atraso para o painel do cartão estar visível (x-show) e o container ter dimensões
-        var doCreate = function() {
-            var loadingEl = document.getElementById('loading-card-inscricao');
-            if (cardBrickCreatedInscricao) return;
-            if (typeof MercadoPago === 'undefined') {
-                setCardErrorInscricao('Formulário de cartão não carregou. Por favor, use PIX para pagar ou recarregue a página.');
-                if (loadingEl) loadingEl.style.display = 'none';
-                return;
-            }
-            cardBrickCreatedInscricao = true;
-            try {
-                var mp = new MercadoPago(publicKeyInscricao, { locale: 'pt-BR' });
-                var bricksBuilder = mp.bricks();
-            } catch (e) {
-                cardBrickCreatedInscricao = false;
-                if (loadingEl) loadingEl.style.display = 'none';
-                setCardErrorInscricao('Erro ao iniciar o pagamento com cartão. Use PIX para pagar.');
-                return;
-            }
-            bricksBuilder.create('payment', 'cardPaymentBrick_container_inscricao', {
-            initialization: { amount: valorInscricao },
-            customization: {
-                paymentMethods: { maxInstallments: 12, ticket: 'nb', bankTransfer: 'nb', debitCard: 'nb', creditCard: 'all' },
-                visual: { style: { theme: 'bootstrap' } }
-            },
+        if (typeof MercadoPago === 'undefined') {
+            setCardErrorInscricao('Sistema de cartão não carregou. Recarregue a página ou use PIX.');
+            if (loadingEl) loadingEl.style.display = 'none';
+            return;
+        }
+        cardBrickCreatedInscricao = true;
+        var mp = new MercadoPago(publicKeyInscricao, { locale: 'pt-BR' });
+        var bricksBuilder = mp.bricks();
+        var settings = {
+            initialization: { amount: amount },
             callbacks: {
                 onReady: function() { if (loadingEl) loadingEl.style.display = 'none'; },
                 onSubmit: function(formData) {
@@ -274,7 +264,7 @@
                     if (payload.paymentMethodId && !payload.payment_method_id) payload.payment_method_id = payload.paymentMethodId;
                     if (payload.issuerId !== undefined && payload.issuer_id === undefined) payload.issuer_id = payload.issuerId;
                     payload.device_id = payload.device_id || payload.deviceId || (typeof MP_DEVICE_SESSION_ID !== 'undefined' ? MP_DEVICE_SESSION_ID : '');
-                    var root = document.querySelector('[x-data]');
+                    var root = document.querySelector('[x-data*="paymentDataInscricao"]');
                     if (root && root.__x) root.__x.$data.loading = true;
                     return fetch(processUrlInscricao, {
                         method: 'POST',
@@ -285,7 +275,7 @@
                     .then(function(data) {
                         if (root && root.__x) root.__x.$data.loading = false;
                         if (data.redirect_url) { window.location.href = data.redirect_url; return; }
-                        if (data.payment_id) { window.location.href = successUrlInscricao; return; }
+                        if (data.status === 'success' && data.payment_id) { window.location.href = successUrlInscricao; return; }
                         var msg = data.message || 'Pagamento não aprovado.';
                         if (root && root.__x) root.__x.$data.errorMessage = msg;
                         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -300,18 +290,21 @@
                         throw err;
                     });
                 },
-                onError: function() {
+                onError: function(err) {
                     if (loadingEl) loadingEl.style.display = 'none';
-                    setCardErrorInscricao('O formulário de cartão apresentou um erro. Por favor, use PIX para pagar.');
+                    console.error('[ProTicket] Card Brick onError:', err);
+                    setCardErrorInscricao('Erro no formulário de cartão. Use PIX para pagar.');
                 }
             }
-        }).then(function() {}).catch(function(err) {
-            cardBrickCreatedInscricao = false;
-            if (loadingEl) loadingEl.style.display = 'none';
-            setCardErrorInscricao('O formulário de cartão não está disponível neste momento. Por favor, use PIX para pagar — é rápido e seguro.');
-        });
         };
-        setTimeout(doCreate, 250);
+        bricksBuilder.create('cardPayment', 'cardPaymentBrick_container_inscricao', settings)
+            .then(function() {})
+            .catch(function(err) {
+                cardBrickCreatedInscricao = false;
+                if (loadingEl) loadingEl.style.display = 'none';
+                console.error('[ProTicket] Card Brick create falhou:', err);
+                setCardErrorInscricao('Formulário de cartão indisponível. Use PIX para pagar.');
+            });
     };
 })();
 </script>

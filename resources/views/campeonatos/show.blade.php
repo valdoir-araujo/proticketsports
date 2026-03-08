@@ -77,18 +77,15 @@
                             </div>
                             @if($evento->status === 'publicado')
                                 <div class="flex flex-wrap items-center gap-2 shrink-0">
-                                    @if($jaRealizada)
-                                        <a href="{{ route('eventos.public.resultados', $evento) }}" class="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg text-sm transition-colors">
-                                            <i class="fa-solid fa-medal"></i> Ver ranking da etapa
-                                        </a>
-                                    @else
-                                        <a href="{{ route('eventos.public.inscritos', $evento) }}" class="inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg text-sm hover:bg-slate-50 transition-colors">
-                                            <i class="fa-solid fa-list"></i> Inscritos
-                                        </a>
-                                        <a href="{{ route('eventos.public.show', $evento) }}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-300 text-slate-700 font-bold rounded-lg text-sm hover:bg-slate-50 transition-colors">
-                                            Ver evento <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
-                                        </a>
-                                    @endif
+                                    <a href="{{ route('eventos.public.inscritos', $evento) }}" class="inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg text-sm hover:bg-slate-50 transition-colors">
+                                        <i class="fa-solid fa-list"></i> Inscritos
+                                    </a>
+                                    <a href="{{ route('eventos.public.resultados', $evento) }}" class="inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg text-sm hover:bg-slate-50 transition-colors">
+                                        <i class="fa-solid fa-stopwatch"></i> Ver resultados
+                                    </a>
+                                    <a href="{{ route('eventos.public.show', $evento) }}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-300 text-slate-700 font-bold rounded-lg text-sm hover:bg-slate-50 transition-colors">
+                                        Ver evento <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
+                                    </a>
                                 </div>
                             @endif
                         </div>
@@ -102,20 +99,5 @@
             @endif
         </section>
 
-        {{-- Regulamento --}}
-        @if($campeonato->regulamento_url)
-            <section class="pt-8 border-t border-gray-200">
-                <a href="{{ asset('storage/' . $campeonato->regulamento_url) }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-orange-600 font-bold hover:text-orange-800 transition-colors">
-                    <i class="fa-solid fa-file-lines"></i>
-                    Baixar regulamento
-                </a>
-            </section>
-        @endif
-
-        <div>
-            <a href="{{ route('campeonatos.index') }}" class="inline-flex items-center gap-2 text-slate-600 hover:text-orange-600 font-bold transition-colors">
-                <i class="fa-solid fa-arrow-left"></i> Voltar aos campeonatos
-            </a>
-        </div>
     </div>
 @endsection

@@ -20,8 +20,8 @@ class UpdateInscricaoRequest extends FormRequest
     }
 
     /**
-     * Normaliza o array de produtos: mantém apenas itens com id válido (ou chave como id)
-     * e quantidade >= 0, para evitar erro "valor obrigatório para produtos.X.id".
+     * Normaliza o array de produtos: só considera itens com [id] enviado (checkbox marcado).
+     * Quantidade 0 = remover da inscrição; >= 1 = manter/incluir.
      */
     protected function prepareForValidation(): void
     {
@@ -35,8 +35,7 @@ class UpdateInscricaoRequest extends FormRequest
             if (! is_array($item)) {
                 continue;
             }
-            $id = $item['id'] ?? $key;
-            if ($id === '' || $id === null) {
+            if (! isset($item['id']) || $item['id'] === '' || $item['id'] === null) {
                 continue;
             }
             $qty = (int) ($item['quantidade'] ?? 0);
@@ -44,7 +43,7 @@ class UpdateInscricaoRequest extends FormRequest
                 continue;
             }
             $normalized[] = [
-                'id' => (int) $id,
+                'id' => (int) $item['id'],
                 'quantidade' => $qty,
                 'tamanho' => $item['tamanho'] ?? null,
             ];

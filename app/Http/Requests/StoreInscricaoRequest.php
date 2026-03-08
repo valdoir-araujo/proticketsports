@@ -16,10 +16,9 @@ class StoreInscricaoRequest extends FormRequest
     }
 
     /**
-     * Normaliza o array de produtos antes da validação: o formulário pode enviar
-     * produtos[ID][quantidade] e produtos[ID][tamanho] mesmo quando o checkbox
-     * produtos[ID][id] não foi enviado (ex.: checkbox desmarcado). Mantemos apenas
-     * itens com id válido (ou chave numérica) e quantidade >= 1.
+     * Normaliza o array de produtos: só considera itens que tenham [id] enviado (checkbox marcado).
+     * Quando o checkbox está desmarcado, produtos[ID][id] não vem no POST, mas produtos[ID][quantidade]
+     * pode vir. Não usar a chave do array como id — senão todos os produtos seriam incluídos.
      */
     protected function prepareForValidation(): void
     {
@@ -33,8 +32,8 @@ class StoreInscricaoRequest extends FormRequest
             if (! is_array($item)) {
                 continue;
             }
-            $id = $item['id'] ?? $key;
-            if ($id === '' || $id === null) {
+            // Só incluir se o checkbox foi enviado (id presente). Sem isso = produto não selecionado.
+            if (! isset($item['id']) || $item['id'] === '' || $item['id'] === null) {
                 continue;
             }
             $qty = (int) ($item['quantidade'] ?? 0);
@@ -42,7 +41,7 @@ class StoreInscricaoRequest extends FormRequest
                 continue;
             }
             $normalized[] = [
-                'id' => (int) $id,
+                'id' => (int) $item['id'],
                 'quantidade' => $qty,
                 'tamanho' => $item['tamanho'] ?? null,
             ];

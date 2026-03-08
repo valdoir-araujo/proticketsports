@@ -13,15 +13,23 @@ class StravaController extends Controller
 {
     /**
      * URL de callback usada na autorização e na troca de token.
-     * Se STRAVA_REDIRECT_URI não estiver definida, usa APP_URL + /strava/callback.
+     * Em produção usa HTTPS (Strava exige). STRAVA_REDIRECT_URI sobrescreve se definida no .env.
      */
     private function getRedirectUri(): string
     {
         $config = config('services.strava.redirect_uri');
-        if (!empty($config)) {
-            return $config;
+        if (!empty(trim((string) $config))) {
+            return rtrim(trim($config), '/');
         }
-        return url(route('strava.callback', [], false));
+        $path = '/' . ltrim(route('strava.callback', [], false), '/');
+        if (app()->environment('production')) {
+            $base = rtrim(request()->getSchemeAndHttpHost() ?: config('app.url'), '/');
+            if (str_starts_with($base, 'http://')) {
+                $base = 'https://' . substr($base, 7);
+            }
+            return $base . $path;
+        }
+        return rtrim(config('app.url'), '/') . $path;
     }
 
     /**

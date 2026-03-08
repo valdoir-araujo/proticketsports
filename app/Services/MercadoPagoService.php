@@ -295,7 +295,8 @@ class MercadoPagoService implements PaymentGatewayInterface
     public function verifyWebhookSignature(Request $request): bool
     {
         $secret = config('services.mercadopago.webhook_secret');
-        if (empty($secret)) {
+        $secret = $secret !== null ? trim((string) $secret) : '';
+        if ($secret === '') {
             if (app()->environment('production')) {
                 Log::warning('Webhook MP: MERCADOPAGO_WEBHOOK_SECRET não configurado. Configure em Suas integrações > Webhooks.');
                 return false;
@@ -322,7 +323,7 @@ class MercadoPagoService implements PaymentGatewayInterface
                 if ($key === 'ts') {
                     $ts = $value;
                 } elseif ($key === 'v1') {
-                    $hash = $value;
+                    $hash = trim($value);
                 }
             }
         }
@@ -331,17 +332,29 @@ class MercadoPagoService implements PaymentGatewayInterface
             return false;
         }
 
-        // data.id pode vir na query string (?data.id=xxx) ou no body JSON (data.id ou data[id])
-        $dataId = $request->query('data.id')
-            ?? $request->input('data.id')
-            ?? (is_array($request->input('data')) ? ($request->input('data')['id'] ?? null) : null);
-        if ($dataId !== null && is_string($dataId) && preg_match('/^[a-zA-Z0-9_-]+$/', $dataId)) {
-            $dataId = strtolower($dataId);
+        // data.id: query ou body JSON. MP envia no body como data.id.
+        $dataId = $request->query('data.id');
+        if ($dataId === null || $dataId === '') {
+            $dataId = $request->input('data.id');
         }
-        $dataId = $dataId ?? '';
+        if ($dataId === null || $dataId === '') {
+            $data = $request->input('data');
+            $dataId = is_array($data) ? ($data['id'] ?? null) : null;
+        }
+        if (($dataId === null || $dataId === '') && $request->getContent()) {
+            $raw = json_decode($request->getContent(), true);
+            if (is_array($raw) && isset($raw['data']['id'])) {
+                $dataId = $raw['data']['id'];
+            }
+        }
+        if ($dataId !== null && is_string($dataId)) {
+            $dataId = preg_match('/^[a-zA-Z0-9_-]+$/', $dataId) ? strtolower($dataId) : $dataId;
+        }
+        $dataId = $dataId !== null ? (string) $dataId : '';
 
         $manifestParts = ["id:$dataId"];
-        if ($xRequestId !== null && $xRequestId !== '') {
+        $xRequestId = $xRequestId !== null ? trim((string) $xRequestId) : '';
+        if ($xRequestId !== '') {
             $manifestParts[] = "request-id:$xRequestId";
         }
         $manifestParts[] = "ts:$ts";
@@ -350,7 +363,10 @@ class MercadoPagoService implements PaymentGatewayInterface
         $calculated = hash_hmac('sha256', $manifest, $secret);
         $valid = hash_equals($calculated, $hash);
         if (!$valid) {
-            Log::warning('Webhook MP: assinatura inválida. Verifique MERCADOPAGO_WEBHOOK_SECRET no .env (copie de novo em Suas integrações > Webhooks, sem espaços).');
+            Log::warning('Webhook MP: assinatura inválida.', [
+                'manifest' => $manifest,
+                'secret_length' => strlen($secret),
+            ]);
         }
         return $valid;
     }

@@ -11,15 +11,31 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('eventos', function (Blueprint $table) {
-            // 1. Adicionar as novas colunas para ID de estado e cidade
-            $table->foreignId('estado_id')->after('local')->constrained('estados');
-            $table->foreignId('cidade_id')->after('estado_id')->constrained('cidades');
+        // 1. Adicionar estado_id e cidade_id só se não existirem (evita duplicate column)
+        if (!Schema::hasColumn('eventos', 'estado_id')) {
+            Schema::table('eventos', function (Blueprint $table) {
+                $table->foreignId('estado_id')->after('local')->constrained('estados');
+            });
+        }
+        if (!Schema::hasColumn('eventos', 'cidade_id')) {
+            Schema::table('eventos', function (Blueprint $table) {
+                $table->foreignId('cidade_id')->after('estado_id')->constrained('cidades');
+            });
+        }
 
-            // 2. Remover as colunas de texto antigas
-            $table->dropColumn('cidade');
-            $table->dropColumn('estado');
-        });
+        // 2. Remover colunas de texto antigas só se existirem
+        $drop = [];
+        if (Schema::hasColumn('eventos', 'cidade')) {
+            $drop[] = 'cidade';
+        }
+        if (Schema::hasColumn('eventos', 'estado')) {
+            $drop[] = 'estado';
+        }
+        if (!empty($drop)) {
+            Schema::table('eventos', function (Blueprint $table) use ($drop) {
+                $table->dropColumn($drop);
+            });
+        }
     }
 
     /**

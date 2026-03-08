@@ -88,6 +88,49 @@ php artisan config:cache
 
 ---
 
+## Parte 3 – Depois de subir os arquivos (obrigatório)
+
+Sempre que você enviar arquivos novos (por FTP ou Git), **entre no servidor por SSH** e rode estes comandos na **pasta raiz do projeto Laravel** (onde está o `artisan`):
+
+### 1. Rodar as migrations (novas tabelas e colunas do banco)
+Cria/atualiza tabelas como: endereço do atleta (CEP, logradouro, etc.), parceiros, contatos, evento_contatos, regulamento em eventos, cupom em pedidos, Strava no atleta, e outras.
+
+```bash
+cd /home/u769958563/domains/proticketsports.com.br/public_html
+php artisan migrate --force
+```
+
+O `--force` é necessário em produção (Hostinger). Se aparecer "Nothing to migrate", está tudo certo.
+
+### 2. Link da pasta storage (para fotos de perfil, uploads)
+Se ainda não rodou ou se deu erro de "storage link":
+
+```bash
+php artisan storage:link
+```
+
+### 3. Limpar cache (recomendado após mudar .env ou config)
+```bash
+php artisan config:clear
+php artisan cache:clear
+```
+
+### Resumo dos comandos no servidor (copiar e colar)
+```bash
+cd /home/u769958563/domains/proticketsports.com.br/public_html
+php artisan migrate --force
+php artisan storage:link
+php artisan config:clear
+php artisan cache:clear
+```
+
+**Conexão SSH** (senha quando pedir):
+```bash
+ssh -p 65002 u769958563@93.127.189.99
+```
+
+---
+
 ## Resumo: o que é automático x o que você faz
 
 | Ação | Quem faz |
@@ -97,6 +140,7 @@ php artisan config:cache
 | Criar repositório no GitHub e dar `git push` | Você |
 | Entrar no painel da Hostinger / FTP / SSH | Você |
 | Enviar arquivos ou dar `git pull` no servidor | Você |
+| **Rodar `php artisan migrate --force` no servidor** | **Você (obrigatório após subir código novo)** |
 
 Nada disso o Cursor pode fazer por você porque depende da sua conta (GitHub, Hostinger) e do Git instalado no seu PC.
 

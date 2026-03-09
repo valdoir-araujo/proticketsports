@@ -7,27 +7,46 @@ use App\Models\Cupom;
 use App\Models\Inscricao;
 use App\Models\PedidoLoja;
 use App\Models\ProdutoOpcional;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PagamentoController extends Controller
 {
     /**
+     * Retorna o usuário que pode pagar a inscrição: logado OU identificado pela sessão da inscrição.
+     */
+    private function getPagamentoUser(): ?User
+    {
+        if (Auth::check()) {
+            return Auth::user();
+        }
+        if (session()->has('inscricao_user_id')) {
+            return User::find(session('inscricao_user_id'));
+        }
+        return null;
+    }
+
+    /**
      * Mostra a página de checkout com os componentes de pagamento (Bricks).
      */
     public function show(Inscricao $inscricao, PaymentGatewayInterface $paymentGateway): View|RedirectResponse
     {
         // 1. Validação de Segurança e Status
-        $user = auth()->user();
-        $donoAtleta = $user && $inscricao->atleta->user_id === $user->id;
+        $user = $this->getPagamentoUser();
+        if (!$user) {
+            abort(403, 'Acesso não autorizado.');
+        }
+        $donoAtleta = $inscricao->atleta->user_id === $user->id;
         $grupoDoUsuario = $inscricao->codigo_grupo && Inscricao::where('codigo_grupo', $inscricao->codigo_grupo)
-            ->whereHas('atleta', fn ($q) => $q->where('user_id', $user?->id))
+            ->whereHas('atleta', fn ($q) => $q->where('user_id', $user->id))
             ->exists();
-        $podePagarGrupo = $user && $inscricao->codigo_grupo; // Quem criou o grupo (redirecionado) pode pagar
+        $podePagarGrupo = $inscricao->codigo_grupo && $grupoDoUsuario;
         if (!$donoAtleta && !$grupoDoUsuario && !$podePagarGrupo) {
             abort(403, 'Acesso não autorizado.');
         }
@@ -107,9 +126,14 @@ class PagamentoController extends Controller
     public function process(Request $request, Inscricao $inscricao, PaymentGatewayInterface $paymentGateway): JsonResponse
     {
         // 1. Validações Iniciais (dono da inscrição ou quem paga o grupo)
-        $userId = auth()->id();
-        $donoAtleta = $inscricao->atleta->user_id === $userId;
-        $podePagarGrupo = $userId && $inscricao->codigo_grupo;
+        $user = $this->getPagamentoUser();
+        if (!$user) {
+            return response()->json(['status' => 'error', 'message' => 'Acesso negado.'], 403);
+        }
+        $donoAtleta = $inscricao->atleta->user_id === $user->id;
+        $podePagarGrupo = $inscricao->codigo_grupo && Inscricao::where('codigo_grupo', $inscricao->codigo_grupo)
+            ->whereHas('atleta', fn ($q) => $q->where('user_id', $user->id))
+            ->exists();
         if (!$donoAtleta && !$podePagarGrupo) {
             return response()->json(['status' => 'error', 'message' => 'Acesso negado.'], 403);
         }
@@ -305,7 +329,8 @@ class PagamentoController extends Controller
      */
     public function sucesso(Inscricao $inscricao): View|RedirectResponse
     {
-        if ($inscricao->atleta->user_id !== auth()->id()) {
+        $user = $this->getPagamentoUser();
+        if (!$user || $inscricao->atleta->user_id !== $user->id) {
             abort(403);
         }
         if ($inscricao->status !== 'confirmada') {
@@ -320,7 +345,8 @@ class PagamentoController extends Controller
      */
     public function falha(Inscricao $inscricao): View
     {
-        if ($inscricao->atleta->user_id !== auth()->id()) {
+        $user = $this->getPagamentoUser();
+        if (!$user || $inscricao->atleta->user_id !== $user->id) {
             abort(403);
         }
         return view('pagamento.falha', compact('inscricao'));

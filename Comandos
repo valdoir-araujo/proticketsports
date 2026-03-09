@@ -42,3 +42,7 @@ php artisan make:migration add_avatar_template_url_to_eventos_table --table=even
 Gerar tabela d epedidos
 
 php artisan make:migration create_pedidos_loja_table
+
+
+git pull origin master
+php artisan view:clear

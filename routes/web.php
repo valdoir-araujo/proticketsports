@@ -90,9 +90,14 @@ Route::get('/contato', [ContatoController::class, 'index'])->name('contato.index
 // --- INSCRIÇÃO: IDENTIFICAÇÃO (CPF/email + data nascimento), sem login ---
 Route::get('/evento/{evento}/identificacao', [InscricaoController::class, 'identificacao'])->name('inscricao.identificacao');
 Route::post('/evento/{evento}/identificacao', [InscricaoController::class, 'verificarIdentificacao'])->name('inscricao.identificacao.verificar');
-// Inscrição create/store: aceitam usuário logado OU session (após identificação). Throttle evita abuso em massa.
+// Inscrição create/store/pagamento: aceitam usuário logado OU session (após identificação). Throttle evita abuso em massa.
 Route::get('/evento/{evento}/inscrever', [InscricaoController::class, 'create'])->name('inscricao.create');
 Route::post('/inscricoes', [InscricaoController::class, 'store'])->name('inscricao.store')->middleware('throttle:15,1');
+// Pagamento da inscrição (PIX/cartão) – protegido por dono/código do grupo dentro do controller, sem exigir login por senha.
+Route::get('/inscricao/{inscricao}/pagamento', [PagamentoController::class, 'show'])->name('pagamento.show');
+Route::post('/inscricao/{inscricao}/processar-pagamento', [PagamentoController::class, 'process'])->name('pagamento.process')->middleware('throttle:30,1');
+Route::get('/pagamento/{inscricao}/sucesso', [PagamentoController::class, 'sucesso'])->name('pagamento.sucesso');
+Route::get('/pagamento/{inscricao}/falha', [PagamentoController::class, 'falha'])->name('pagamento.falha');
 Route::get('/api/atletas/search', [InscricaoController::class, 'pesquisarAtleta'])->name('api.atletas.search');
 Route::get('/api/equipes/search', [InscricaoController::class, 'pesquisarEquipe'])->name('api.equipes.search');
 Route::get('/api/equipes/{equipe}/atletas', [InscricaoController::class, 'atletasDaEquipe'])->name('api.equipes.atletas');
@@ -210,18 +215,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/minhas-inscricoes', [AtletaController::class, 'index'])->name('inscricoes');
     });
 
-    // --- INSCRIÇÃO EM EVENTOS (create/store estão fora do auth; show/edit/update exigem dono) ---
+    // --- INSCRIÇÃO EM EVENTOS (create/store/pagamento estão fora do auth; show/edit/update exigem dono) ---
     Route::get('/inscricoes/{inscricao}', [InscricaoController::class, 'show'])->name('inscricao.show');
     Route::get('/inscricoes/{inscricao}/editar', [InscricaoController::class, 'edit'])->name('inscricao.edit');
     Route::patch('/inscricoes/{inscricao}', [InscricaoController::class, 'update'])->name('inscricao.update');
     Route::post('/inscricoes/{inscricao}/aplicar-cupom', [InscricaoController::class, 'aplicarCupom'])->name('inscricao.cupom.aplicar');
-    
-    // Pagamento de Inscrição
-    Route::get('/inscricao/{inscricao}/pagamento', [PagamentoController::class, 'show'])->name('pagamento.show');
-    Route::post('/inscricao/{inscricao}/processar-pagamento', [PagamentoController::class, 'process'])->name('pagamento.process')->middleware('throttle:30,1');
-    Route::get('/pagamento/{inscricao}/sucesso', [PagamentoController::class, 'sucesso'])->name('pagamento.sucesso');
-    Route::get('/pagamento/{inscricao}/falha', [PagamentoController::class, 'falha'])->name('pagamento.falha');
-
     // Avatar
     Route::get('/inscricao/{inscricao}/avatar', [InscricaoController::class, 'avatar'])->name('inscricao.avatar');
 

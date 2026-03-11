@@ -41,8 +41,8 @@
         })();
     </script>
 
-    {{-- Main Alpine Component --}}
-    <div data-initial-tab="{{ session('tab', 'inscritos') }}"
+    {{-- Main Alpine Component (activeTab garante que sem JS as abas funcionem por link) --}}
+    <div data-initial-tab="{{ $activeTab ?? session('tab', 'inscritos') }}"
          x-data="eventoShow()">
 
         {{-- NEW HERO HEADER --}}
@@ -83,10 +83,10 @@
                             <i class="fa-solid fa-pen-to-square mr-2"></i> Editar
                         </a>
 
-                        {{-- Botão Repasse (Movido do Menu para Destaque) --}}
-                        <button type="button" @click="tab = 'repasse'" class="inline-flex items-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-900/50 transition-all hover:-translate-y-0.5 border border-emerald-500/50 touch-manipulation min-h-[44px]">
+                        {{-- Botão Repasse (link para funcionar sem JS no mobile) --}}
+                        <a href="{{ route('organizador.eventos.show', [$evento, 'tab' => 'repasse']) }}" @click.prevent="tab = 'repasse'" class="inline-flex items-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-900/50 transition-all hover:-translate-y-0.5 border border-emerald-500/50 touch-manipulation min-h-[44px] no-underline">
                             <i class="fa-solid fa-money-bill-transfer mr-2"></i> Repasse
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -175,20 +175,20 @@
                         @endphp
 
                         @foreach($tabs as $key => $data)
-                            <button type="button"
-                                    @click="tab = '{{ $key }}'"
-                                    :class="{ 
-                                        'bg-white text-orange-600 border-t-4 border-orange-600 shadow-md font-extrabold': tab === '{{ $key }}', 
-                                        'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-800 border border-slate-200': tab !== '{{ $key }}'
-                                    }" 
-                                    class="group relative px-4 py-3 font-bold text-sm rounded-lg transition-all duration-200 flex items-center gap-2 touch-manipulation min-h-[44px] select-none">
+                            @php $isActive = ($activeTab ?? '') === $key; @endphp
+                            <a href="{{ route('organizador.eventos.show', [$evento, 'tab' => $key]) }}"
+                               @click.prevent="tab = '{{ $key }}'; $el.focus()"
+                               :class="{ 
+                                   'bg-white text-orange-600 border-t-4 border-orange-600 shadow-md font-extrabold': tab === '{{ $key }}', 
+                                   'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-800 border border-slate-200': tab !== '{{ $key }}'
+                               }" 
+                               class="group relative px-4 py-3 font-bold text-sm rounded-lg transition-all duration-200 flex items-center gap-2 touch-manipulation min-h-[44px] select-none no-underline {{ $isActive ? 'bg-white text-orange-600 border-t-4 border-orange-600 shadow-md font-extrabold' : 'bg-white text-slate-600 border border-slate-200' }}">
                                 
-                                {{-- Icone com cor condicional --}}
                                 <i class="fa-solid {{ $data['icon'] }} opacity-80 group-hover:opacity-100 transition-colors"
                                    :class="{ 'text-orange-600': tab === '{{ $key }}', 'text-slate-400': tab !== '{{ $key }}' }"></i>
                                 
                                 {{ $data['label'] }}
-                            </button>
+                            </a>
                         @endforeach
                     </nav>
                 </div>
@@ -212,27 +212,24 @@
                     </div>
                 @endif
 
-                {{-- Tab Content Areas --}}
+                {{-- Tab Content Areas: com Alpine (x-show) e sem JS (class hidden) para funcionar no mobile --}}
                 <div class="p-6 md:p-8 bg-white">
-                    <div x-show="tab === 'financeiro'" style="display: none;" class="space-y-6 animate-fade-in">@include('organizador.eventos.partials.aba-financeiro')</div>
-                    <div x-show="tab === 'inscritos'" style="display: none;" class="animate-fade-in">@include('organizador.eventos.partials.aba-inscritos')</div>
-                    <div x-show="tab === 'percursos'" style="display: none;" class="space-y-6 animate-fade-in">@include('organizador.eventos.partials.aba-percursos')</div>
-                    <div x-show="tab === 'lotes_gerais'" style="display: none;" class="space-y-6 animate-fade-in">@include('organizador.eventos.partials.aba-lotes-gerais')</div>
-                    <div x-show="tab === 'produtos'" style="display: none;" class="space-y-6 animate-fade-in">@include('organizador.eventos.partials.aba-produtos')</div>
-                    <div x-show="tab === 'cupons'" style="display: none;" class="space-y-6 animate-fade-in">@include('organizador.eventos.partials.aba-cupons')</div>
-                    <div x-show="tab === 'contatos'" style="display: none;" class="space-y-6 animate-fade-in">@include('organizador.eventos.partials.aba-contatos')</div>
-                    <div x-show="tab === 'regulamento'" style="display: none;" class="space-y-6 animate-fade-in">@include('organizador.eventos.partials.aba-regulamento')</div>
+                    <div x-show="tab === 'financeiro'" class="space-y-6 animate-fade-in {{ ($activeTab ?? '') !== 'financeiro' ? 'hidden' : '' }}">@include('organizador.eventos.partials.aba-financeiro')</div>
+                    <div x-show="tab === 'inscritos'" class="animate-fade-in {{ ($activeTab ?? '') !== 'inscritos' ? 'hidden' : '' }}">@include('organizador.eventos.partials.aba-inscritos')</div>
+                    <div x-show="tab === 'percursos'" class="space-y-6 animate-fade-in {{ ($activeTab ?? '') !== 'percursos' ? 'hidden' : '' }}">@include('organizador.eventos.partials.aba-percursos')</div>
+                    <div x-show="tab === 'lotes_gerais'" class="space-y-6 animate-fade-in {{ ($activeTab ?? '') !== 'lotes_gerais' ? 'hidden' : '' }}">@include('organizador.eventos.partials.aba-lotes-gerais')</div>
+                    <div x-show="tab === 'produtos'" class="space-y-6 animate-fade-in {{ ($activeTab ?? '') !== 'produtos' ? 'hidden' : '' }}">@include('organizador.eventos.partials.aba-produtos')</div>
+                    <div x-show="tab === 'cupons'" class="space-y-6 animate-fade-in {{ ($activeTab ?? '') !== 'cupons' ? 'hidden' : '' }}">@include('organizador.eventos.partials.aba-cupons')</div>
+                    <div x-show="tab === 'contatos'" class="space-y-6 animate-fade-in {{ ($activeTab ?? '') !== 'contatos' ? 'hidden' : '' }}">@include('organizador.eventos.partials.aba-contatos')</div>
+                    <div x-show="tab === 'regulamento'" class="space-y-6 animate-fade-in {{ ($activeTab ?? '') !== 'regulamento' ? 'hidden' : '' }}">@include('organizador.eventos.partials.aba-regulamento')</div>
                     
-                    {{-- Conteúdo do Repasse mantido e acessível via botão no header --}}
-                    <div x-show="tab === 'repasse'" style="display: none;" class="animate-fade-in">@include('organizador.eventos.partials.aba-repasse')</div>
+                    <div x-show="tab === 'repasse'" class="animate-fade-in {{ ($activeTab ?? '') !== 'repasse' ? 'hidden' : '' }}">@include('organizador.eventos.partials.aba-repasse')</div>
                     
-                    <div x-show="tab === 'relatorios'" style="display: none;" class="animate-fade-in">@include('organizador.eventos.partials.aba-relatorios')</div>
+                    <div x-show="tab === 'relatorios'" class="animate-fade-in {{ ($activeTab ?? '') !== 'relatorios' ? 'hidden' : '' }}">@include('organizador.eventos.partials.aba-relatorios')</div>
 
-                    {{-- Formas de Pagamento (PIX manual, chave, QR Code) --}}
-                    <div x-show="tab === 'formas_pgto'" style="display: none;">@include('organizador.eventos.partials.aba-formas-pgto')</div>
+                    <div x-show="tab === 'formas_pgto'" class="{{ ($activeTab ?? '') !== 'formas_pgto' ? 'hidden' : '' }}">@include('organizador.eventos.partials.aba-formas-pgto')</div>
 
-                    {{-- Numeração (Card Moderno) --}}
-                    <div x-show="tab === 'numeracao'" style="display: none;" class="animate-fade-in">
+                    <div x-show="tab === 'numeracao'" class="animate-fade-in {{ ($activeTab ?? '') !== 'numeracao' ? 'hidden' : '' }}">
                         <div class="bg-gradient-to-br from-amber-50 to-white p-10 rounded-2xl border border-amber-100 text-center max-w-3xl mx-auto">
                             <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-white shadow-md mb-6 text-amber-500">
                                 <i class="fa-solid fa-list-ol text-4xl"></i>
@@ -246,7 +243,7 @@
                     </div>
 
                     {{-- Resultados (Card Moderno) --}}
-                    <div x-show="tab === 'resultados'" style="display: none;" class="animate-fade-in">
+                    <div x-show="tab === 'resultados'" class="animate-fade-in {{ ($activeTab ?? '') !== 'resultados' ? 'hidden' : '' }}">
                         <div class="bg-gradient-to-br from-blue-50 to-white p-10 rounded-2xl border border-blue-100 text-center max-w-3xl mx-auto">
                             <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-white shadow-md mb-6 text-blue-600">
                                 <i class="fa-solid fa-stopwatch-20 text-4xl"></i>

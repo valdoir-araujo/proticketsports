@@ -3,36 +3,41 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js" referrerpolicy="origin"></script>
 
     {{-- Dados para o componente Alpine (evita parsing de objeto gigante no atributo) --}}
+    {{-- Registro robusto: antes do Alpine.start() (alpine:init) ou assim que Alpine existir (mobile/ordem de carga) --}}
     <script>
         (function registerEventoShow() {
+            var registered = false;
             function register() {
-                Alpine.data('eventoShow', function() {
-                return {
-                    tab: 'inscritos',
-                    init: function() {
-                        this.tab = this.$el.getAttribute('data-initial-tab') || 'inscritos';
-                        var validTabs = ['financeiro', 'inscritos', 'percursos', 'lotes_gerais', 'produtos', 'cupons', 'contatos', 'regulamento', 'repasse', 'numeracao', 'formas_pgto', 'resultados', 'relatorios'];
-                        var urlParams = new URLSearchParams(window.location.search);
-                        var tabFromUrl = urlParams.get('tab');
-                        var hash = window.location.hash.substring(1);
-                        if (tabFromUrl && validTabs.indexOf(tabFromUrl) >= 0) this.tab = tabFromUrl;
-                        else if (hash && validTabs.indexOf(hash) >= 0) this.tab = hash;
-                        if (urlParams.has('lancamentosPage')) this.tab = 'financeiro';
-                        if (urlParams.has('inscritosPage')) this.tab = 'inscritos';
-                        var self = this;
-                        this.$watch('tab', function(value) {
-                            var newUrl = new URL(window.location);
-                            newUrl.searchParams.delete('tab');
-                            newUrl.hash = value;
-                            window.history.replaceState({}, '', newUrl);
-                            if (value === 'regulamento') self.$nextTick(function() { window.dispatchEvent(new CustomEvent('regulamento-tab-visible')); });
-                        });
-                        if (this.tab === 'regulamento') this.$nextTick(function() { window.dispatchEvent(new CustomEvent('regulamento-tab-visible')); });
-                    }
-                };
-            });
+                if (registered || !window.Alpine) return;
+                registered = true;
+                window.Alpine.data('eventoShow', function() {
+                    return {
+                        tab: 'inscritos',
+                        init: function() {
+                            this.tab = this.$el.getAttribute('data-initial-tab') || 'inscritos';
+                            var validTabs = ['financeiro', 'inscritos', 'percursos', 'lotes_gerais', 'produtos', 'cupons', 'contatos', 'regulamento', 'repasse', 'numeracao', 'formas_pgto', 'resultados', 'relatorios'];
+                            var urlParams = new URLSearchParams(window.location.search);
+                            var tabFromUrl = urlParams.get('tab');
+                            var hash = window.location.hash.substring(1);
+                            if (tabFromUrl && validTabs.indexOf(tabFromUrl) >= 0) this.tab = tabFromUrl;
+                            else if (hash && validTabs.indexOf(hash) >= 0) this.tab = hash;
+                            if (urlParams.has('lancamentosPage')) this.tab = 'financeiro';
+                            if (urlParams.has('inscritosPage')) this.tab = 'inscritos';
+                            var self = this;
+                            this.$watch('tab', function(value) {
+                                var newUrl = new URL(window.location);
+                                newUrl.searchParams.delete('tab');
+                                newUrl.hash = value;
+                                window.history.replaceState({}, '', newUrl);
+                                if (value === 'regulamento') self.$nextTick(function() { window.dispatchEvent(new CustomEvent('regulamento-tab-visible')); });
+                            });
+                            if (this.tab === 'regulamento') this.$nextTick(function() { window.dispatchEvent(new CustomEvent('regulamento-tab-visible')); });
+                        }
+                    };
+                });
             }
-            if (window.Alpine) register(); else document.addEventListener('alpine:init', register);
+            if (window.Alpine) register();
+            else document.addEventListener('alpine:init', register);
         })();
     </script>
 
@@ -79,7 +84,7 @@
                         </a>
 
                         {{-- Botão Repasse (Movido do Menu para Destaque) --}}
-                        <button @click="tab = 'repasse'" class="inline-flex items-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-900/50 transition-all hover:-translate-y-0.5 border border-emerald-500/50">
+                        <button type="button" @click="tab = 'repasse'" class="inline-flex items-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-900/50 transition-all hover:-translate-y-0.5 border border-emerald-500/50 touch-manipulation min-h-[44px]">
                             <i class="fa-solid fa-money-bill-transfer mr-2"></i> Repasse
                         </button>
                     </div>
@@ -170,12 +175,13 @@
                         @endphp
 
                         @foreach($tabs as $key => $data)
-                            <button @click="tab = '{{ $key }}'" 
+                            <button type="button"
+                                    @click="tab = '{{ $key }}'"
                                     :class="{ 
                                         'bg-white text-orange-600 border-t-4 border-orange-600 shadow-md font-extrabold': tab === '{{ $key }}', 
                                         'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-800 border border-slate-200': tab !== '{{ $key }}'
                                     }" 
-                                    class="group relative px-4 py-3 font-bold text-sm rounded-lg transition-all duration-200 flex items-center gap-2">
+                                    class="group relative px-4 py-3 font-bold text-sm rounded-lg transition-all duration-200 flex items-center gap-2 touch-manipulation min-h-[44px] select-none">
                                 
                                 {{-- Icone com cor condicional --}}
                                 <i class="fa-solid {{ $data['icon'] }} opacity-80 group-hover:opacity-100 transition-colors"

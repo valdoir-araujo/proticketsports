@@ -197,16 +197,32 @@
              </div>
             
             <div x-show="open" x-transition x-cloak>
-                <div class="border-b bg-gray-50 overflow-x-auto">
-                    <nav class="p-2 flex whitespace-nowrap">
-                        <button @click="tab = 'sobre'" :class="{ 'bg-orange-500 text-white shadow': tab === 'sobre', 'text-gray-600 hover:bg-gray-200': tab !== 'sobre' }" class="flex items-center flex-shrink-0 py-2 px-4 font-medium text-sm rounded-md transition-all duration-200 mx-1"><i class="fa-solid fa-circle-info mr-2"></i> Sobre o Evento</button>
+                {{-- Abas: no mobile grid 2x2 (todos visíveis); no desktop barra horizontal --}}
+                <div class="border-b bg-gray-50">
+                    <nav class="p-2 sm:p-2 grid grid-cols-2 sm:flex sm:flex-row sm:flex-nowrap gap-2 sm:gap-0 sm:overflow-x-auto sm:whitespace-nowrap">
+                        <button @click="tab = 'sobre'" :class="{ 'bg-orange-500 text-white shadow': tab === 'sobre', 'text-gray-600 hover:bg-gray-200 bg-white border border-slate-200': tab !== 'sobre' }" class="flex items-center justify-center sm:justify-start py-3.5 px-3 sm:py-2 sm:px-4 font-medium text-sm rounded-lg sm:rounded-md transition-all duration-200 sm:mx-1 min-h-[48px] sm:min-h-0">
+                            <i class="fa-solid fa-circle-info mr-2 flex-shrink-0"></i>
+                            <span class="text-left">Sobre o Evento</span>
+                        </button>
                         @if($evento->lista_inscritos_publica)
-                            <a href="{{ route('eventos.public.inscritos', $evento) }}" class="flex items-center flex-shrink-0 py-2 px-4 font-medium text-sm rounded-md transition-all duration-200 text-gray-600 hover:bg-gray-200 mx-1"><i class="fa-solid fa-users mr-2"></i> Lista de Inscritos</a>
+                            <a href="{{ route('eventos.public.inscritos', $evento) }}" class="flex items-center justify-center sm:justify-start py-3.5 px-3 sm:py-2 sm:px-4 font-medium text-sm rounded-lg sm:rounded-md transition-all duration-200 text-gray-600 hover:bg-gray-200 bg-white border border-slate-200 sm:mx-1 min-h-[48px] sm:min-h-0">
+                                <i class="fa-solid fa-users mr-2 flex-shrink-0"></i>
+                                <span class="text-left">Inscritos</span>
+                            </a>
                         @else
-                            <button @click="showListMessage = !showListMessage" class="flex items-center flex-shrink-0 py-2 px-4 font-medium text-sm rounded-md transition-all duration-200 text-gray-600 hover:bg-gray-200 mx-1"><i class="fa-solid fa-users mr-2"></i> Lista de Inscritos</button>
+                            <button @click="showListMessage = !showListMessage" :class="{ 'bg-orange-500 text-white shadow': showListMessage, 'text-gray-600 hover:bg-gray-200 bg-white border border-slate-200': !showListMessage }" class="flex items-center justify-center sm:justify-start py-3.5 px-3 sm:py-2 sm:px-4 font-medium text-sm rounded-lg sm:rounded-md transition-all duration-200 sm:mx-1 min-h-[48px] sm:min-h-0">
+                                <i class="fa-solid fa-users mr-2 flex-shrink-0"></i>
+                                <span class="text-left">Inscritos</span>
+                            </button>
                         @endif
-                        <button @click="tab = 'regulamento'" :class="{ 'bg-orange-500 text-white shadow': tab === 'regulamento', 'text-gray-600 hover:bg-gray-200': tab !== 'regulamento' }" class="flex items-center flex-shrink-0 py-2 px-4 font-medium text-sm rounded-md transition-all duration-200 mx-1"><i class="fa-solid fa-file-contract mr-2"></i> Regulamento</button>
-                        <button @click="tab = 'contatos'" :class="{ 'bg-orange-500 text-white shadow': tab === 'contatos', 'text-gray-600 hover:bg-gray-200': tab !== 'contatos' }" class="flex items-center flex-shrink-0 py-2 px-4 font-medium text-sm rounded-md transition-all duration-200 mx-1"><i class="fa-solid fa-address-card mr-2"></i> Contatos</button>
+                        <button @click="tab = 'regulamento'" :class="{ 'bg-orange-500 text-white shadow': tab === 'regulamento', 'text-gray-600 hover:bg-gray-200 bg-white border border-slate-200': tab !== 'regulamento' }" class="flex items-center justify-center sm:justify-start py-3.5 px-3 sm:py-2 sm:px-4 font-medium text-sm rounded-lg sm:rounded-md transition-all duration-200 sm:mx-1 min-h-[48px] sm:min-h-0">
+                            <i class="fa-solid fa-file-contract mr-2 flex-shrink-0"></i>
+                            <span class="text-left">Regulamento</span>
+                        </button>
+                        <button @click="tab = 'contatos'" :class="{ 'bg-orange-500 text-white shadow': tab === 'contatos', 'text-gray-600 hover:bg-gray-200 bg-white border border-slate-200': tab !== 'contatos' }" class="flex items-center justify-center sm:justify-start py-3.5 px-3 sm:py-2 sm:px-4 font-medium text-sm rounded-lg sm:rounded-md transition-all duration-200 sm:mx-1 min-h-[48px] sm:min-h-0">
+                            <i class="fa-solid fa-address-card mr-2 flex-shrink-0"></i>
+                            <span class="text-left">Contatos</span>
+                        </button>
                     </nav>
                 </div>
 

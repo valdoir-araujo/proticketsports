@@ -25,7 +25,17 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // 419 "Sessão expirada" (CSRF inválido): redireciona para login com mensagem amigável (evita erro no mobile)
+        $exceptions->stopIgnoring(\Illuminate\Session\TokenMismatchException::class);
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Sessão expirada. Atualize a página e tente novamente.'], 419);
+            }
+            $loginRoute = \Illuminate\Support\Facades\Route::has('login') ? route('login') : url('/login');
+            return redirect($loginRoute)
+                ->with('error', 'Sua sessão expirou. Por favor, tente fazer login novamente.')
+                ->withInput($request->only('login', 'email'));
+        });
     })
     ->withProviders([
         \App\Providers\PaymentServiceProvider::class,

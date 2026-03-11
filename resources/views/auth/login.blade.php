@@ -32,6 +32,12 @@
             <div class="absolute top-0 left-0 right-0 h-1 rounded-t-2xl bg-gradient-to-r from-orange-500 to-orange-600" aria-hidden="true"></div>
 
             <x-auth-session-status class="mb-5" :status="session('status')" />
+            @if (session('error'))
+                <div class="mb-5 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium flex items-center gap-2">
+                    <i class="fa-solid fa-circle-exclamation text-amber-500"></i>
+                    {{ session('error') }}
+                </div>
+            @endif
 
             <form method="POST" action="{{ route('login') }}" class="space-y-5" id="login-form">
                 @csrf
@@ -99,11 +105,11 @@
                     </label>
                 </div>
 
-                {{-- Botão Entrar --}}
+                {{-- Botão Entrar (evita duplo envio no mobile/autofill que pode causar 419) --}}
                 <div class="pt-1">
-                    <button type="submit" class="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl text-base font-bold text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/25 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all duration-200 active:scale-[0.99]">
+                    <button type="submit" id="login-submit" class="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl text-base font-bold text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/25 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all duration-200 active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed">
                         <i class="fa-solid fa-right-to-bracket text-white/90"></i>
-                        Entrar
+                        <span id="login-submit-text">Entrar</span>
                     </button>
                 </div>
             </form>
@@ -244,11 +250,26 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Evita duplo envio (mobile/autofill) que pode causar 419
+    var submitBtn = document.getElementById('login-submit');
+    var submitText = document.getElementById('login-submit-text');
+    if (loginForm && submitBtn) {
+        loginForm.addEventListener('submit', function() {
+            submitBtn.disabled = true;
+            if (submitText) submitText.textContent = 'Entrando...';
+        });
+    }
+
     // Form Submission (estrangeiro: só e-mail, sem validar CPF/CNPJ)
     loginForm.addEventListener('submit', function(e) {
+        function reenableSubmit() {
+            if (submitBtn) { submitBtn.disabled = false; }
+            if (submitText) submitText.textContent = 'Entrar';
+        }
         if (checkEstrangeiro && checkEstrangeiro.checked) {
             if (!loginInput.value || !loginInput.value.includes('@')) {
                 e.preventDefault();
+                reenableSubmit();
                 loginError.textContent = 'Estrangeiros devem informar o e-mail cadastrado.';
                 loginError.classList.remove('hidden');
                 loginInput.focus();
@@ -256,13 +277,14 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         const value = loginInput.value;
-        if (value.includes('@')) return; 
+        if (value.includes('@')) return;
 
         const pureDigits = value.replace(/\D/g, '');
 
         if (pureDigits.length === 11) {
             if (!validateCpf(pureDigits)) {
                 e.preventDefault();
+                reenableSubmit();
                 loginError.textContent = 'CPF informado é inválido.';
                 loginError.classList.remove('hidden');
                 loginInput.focus();
@@ -270,15 +292,17 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (pureDigits.length === 14) {
             if (!validateCnpj(pureDigits)) {
                 e.preventDefault();
+                reenableSubmit();
                 loginError.textContent = 'CNPJ informado é inválido.';
                 loginError.classList.remove('hidden');
                 loginInput.focus();
             }
-        } else if (pureDigits.length > 0) { 
-             e.preventDefault();
-             loginError.textContent = 'Documento inválido. Digite CPF, CNPJ ou E-mail.';
-             loginError.classList.remove('hidden');
-             loginInput.focus();
+        } else if (pureDigits.length > 0) {
+            e.preventDefault();
+            reenableSubmit();
+            loginError.textContent = 'Documento inválido. Digite CPF, CNPJ ou E-mail.';
+            loginError.classList.remove('hidden');
+            loginInput.focus();
         }
     });
 });

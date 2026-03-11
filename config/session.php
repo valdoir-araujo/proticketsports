@@ -32,7 +32,8 @@ return [
     |
     */
 
-    'lifetime' => (int) env('SESSION_LIFETIME', 120),
+    // Em produção/mobile: 720 = 12h evita "sessão expirada" ao abrir login e enviar depois
+    'lifetime' => (int) env('SESSION_LIFETIME', 720),
 
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
 
@@ -169,7 +170,8 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    // true em HTTPS (Hostinger). Se não definido, infere por APP_URL para evitar cookie rejeitado no mobile
+    'secure' => env('SESSION_SECURE_COOKIE', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_SCHEME) === 'https'),
 
     /*
     |--------------------------------------------------------------------------
@@ -196,6 +198,7 @@ return [
     | See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value
     |
     | Supported: "lax", "strict", "none", null
+    | "lax" é o recomendado para login no mobile (strict pode causar 419 ao vir de link externo).
     |
     */
 

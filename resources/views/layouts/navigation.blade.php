@@ -1,4 +1,4 @@
-    <header class="bg-white shadow-md sticky top-0 z-40">
+    <header class="bg-white shadow-md sticky top-0 z-40 overflow-visible">
         {{-- Lógica para determinar o estado atual do usuário --}}
         @php
             $user = Auth::user();
@@ -15,7 +15,7 @@
             }
         @endphp
 
-        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" x-data="{ open: false }">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-visible" x-data="{ open: false }" @click.outside="open = false">
             <div class="flex h-16 items-center justify-between">
                 {{-- Lado Esquerdo: Logo --}}
                 <div class="flex items-center">
@@ -84,11 +84,11 @@
                     </div>
                 </div>
                 
-                {{-- Botão "Hamburger" / "Fechar" para Mobile — um único ícone visível por vez (x-show) --}}
+                {{-- Botão "Hamburger" / "Fechar" para Mobile — um único ícone visível por vez --}}
                 <div class="-mr-2 flex md:hidden">
-                    <button @click="open = !open" type="button" :aria-expanded="open" aria-controls="mobile-menu" :aria-label="open ? 'Fechar menu' : 'Abrir menu'" class="relative inline-flex items-center justify-center rounded-lg p-3 min-w-[44px] min-h-[44px] text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 active:bg-gray-200 transition-colors">
+                    <button @click.stop="open = !open" type="button" :aria-expanded="open" aria-controls="mobile-menu" :aria-label="open ? 'Fechar menu' : 'Abrir menu'" class="relative inline-flex items-center justify-center rounded-lg p-3 min-w-[44px] min-h-[44px] text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 active:bg-gray-200 transition-colors touch-manipulation">
                         <span class="sr-only" x-text="open ? 'Fechar menu' : 'Abrir menu'"></span>
-                        <span class="inline-flex items-center justify-center w-6 h-6" x-show="!open" x-cloak x-transition style="display: none;">
+                        <span class="inline-flex items-center justify-center w-6 h-6" x-show="!open" x-transition>
                             <i class="fa-solid fa-bars h-6 w-6" aria-hidden="true"></i>
                         </span>
                         <span class="inline-flex items-center justify-center w-6 h-6" x-show="open" x-transition style="display: none;">
@@ -98,8 +98,8 @@
                 </div>
             </div>
 
-            {{-- Painel do menu mobile --}}
-            <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="md:hidden border-t border-gray-100" id="mobile-menu">
+            {{-- Painel do menu mobile (z-50 para ficar acima do conteúdo do dashboard) --}}
+            <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="md:hidden border-t border-gray-100 bg-white shadow-lg relative z-50" id="mobile-menu">
                 <div class="space-y-1 px-3 pb-4 pt-3 sm:px-4">
                     @auth
                         {{-- BOTÕES MOBILE INTELIGENTES --}}

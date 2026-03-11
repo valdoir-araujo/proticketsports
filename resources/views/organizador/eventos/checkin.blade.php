@@ -62,27 +62,57 @@
                 },
 
                 async openScan() {
+                    if (typeof Html5Qrcode === 'undefined') {
+                        this.showToast('Leitor de QR não carregou. Recarregue a página.', 'error');
+                        return;
+                    }
+                    if (!window.isSecureContext) {
+                        this.showToast('No celular use o site em HTTPS para a câmera funcionar.', 'error');
+                        return;
+                    }
                     this.scanModalOpen = true;
                     this.scanError = '';
                     this.lastScannedCode = '';
+                    const self = this;
                     this.$nextTick(() => {
                         const el = document.getElementById('qr-reader');
-                        if (!el || typeof Html5Qrcode === 'undefined') {
-                            this.scanError = 'Leitor de QR não carregou. Recarregue a página.';
-                            return;
-                        }
-                        const self = this;
-                        this.scannerInstance = new Html5Qrcode('qr-reader');
-                        const config = { fps: 12, qrbox: { width: 260, height: 260 } };
-                        this.scannerInstance.start(
-                            { facingMode: 'environment' },
-                            config,
-                            (decodedText) => self.onScanSuccess(decodedText),
-                            () => {}
-                        ).catch(err => {
-                            console.error(err);
-                            self.scanError = 'Não foi possível acessar a câmera. Verifique as permissões.';
-                        });
+                        if (!el) return;
+                        self.scannerInstance = new Html5Qrcode('qr-reader');
+                        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+                        const onSuccess = (decodedText) => self.onScanSuccess(decodedText);
+                        const tryStart = (cameraIdOrConfig) => {
+                            self.scannerInstance.start(cameraIdOrConfig, config, onSuccess, () => {}).catch(err => {
+                                console.error(err);
+                                self.scanError = 'Câmera indisponível. Use o site em HTTPS, permita acesso à câmera ou use "Escolher foto" abaixo.';
+                            });
+                        };
+                        Html5Qrcode.getCameras().then(cameras => {
+                            if (cameras && cameras.length) {
+                                const back = cameras.find(c => /back|traseira|environment/i.test(c.label));
+                                tryStart(back ? back.id : cameras[0].id);
+                            } else {
+                                tryStart({ facingMode: 'environment' });
+                            }
+                        }).catch(() => tryStart({ facingMode: 'environment' }));
+                    });
+                },
+
+                triggerFileScan() {
+                    const input = document.getElementById('qr-file-input');
+                    if (input) input.click();
+                },
+
+                onFileScanned(event) {
+                    const file = event.target.files && event.target.files[0];
+                    if (!file || typeof Html5Qrcode === 'undefined') return;
+                    const self = this;
+                    const scanner = new Html5Qrcode('qr-reader');
+                    scanner.scanFile(file, false).then(decodedText => {
+                        self.onScanSuccess(decodedText);
+                    }).catch(() => {
+                        self.showToast('Nenhum QR Code encontrado na imagem.', 'error');
+                    }).finally(() => {
+                        event.target.value = '';
                     });
                 },
 
@@ -378,8 +408,13 @@
                 </button>
             </div>
             <div class="flex-1 flex flex-col items-center justify-center p-4 min-h-0">
-                <div id="qr-reader" class="w-full max-w-[320px] overflow-hidden rounded-2xl bg-black"></div>
-                <p x-show="scanError" x-text="scanError" class="mt-4 text-amber-400 text-sm text-center"></p>
+                <div id="qr-reader" class="w-full max-w-[320px] overflow-hidden rounded-2xl bg-black min-h-[280px]"></div>
+                <p x-show="scanError" x-text="scanError" class="mt-4 text-amber-400 text-sm text-center max-w-sm"></p>
+                <input type="file" id="qr-file-input" accept="image/*" capture="environment" class="hidden" @change="onFileScanned($event)">
+                <button type="button" @click="triggerFileScan()" class="mt-4 inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium border border-white/20">
+                    <i class="fa-solid fa-image"></i> Escolher foto do QR Code
+                </button>
+                <p class="mt-2 text-xs text-slate-400 text-center max-w-xs">Se a câmera não abrir (ex.: iPhone), tire uma foto do QR e escolha aqui.</p>
             </div>
         </div>
 

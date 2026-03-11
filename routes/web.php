@@ -218,6 +218,7 @@ Route::middleware('auth')->group(function () {
 
     // --- INSCRIÇÃO EM EVENTOS (create/store/pagamento estão fora do auth; show/edit/update exigem dono) ---
     Route::get('/inscricoes/{inscricao}', [InscricaoController::class, 'show'])->name('inscricao.show');
+    Route::get('/inscricoes/{inscricao}/recibo', [InscricaoController::class, 'recibo'])->name('inscricao.recibo');
     Route::get('/inscricoes/{inscricao}/editar', [InscricaoController::class, 'edit'])->name('inscricao.edit');
     Route::patch('/inscricoes/{inscricao}', [InscricaoController::class, 'update'])->name('inscricao.update');
     Route::post('/inscricoes/{inscricao}/aplicar-cupom', [InscricaoController::class, 'aplicarCupom'])->name('inscricao.cupom.aplicar');

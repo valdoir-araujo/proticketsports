@@ -29,11 +29,14 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="lg:col-span-2 space-y-6">
                         <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
-                            <div class="p-6 border-b border-slate-100 bg-slate-50/50">
+                            <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-3">
                                 <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                                     <span class="w-8 h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center"><i class="fa-solid fa-receipt"></i></span>
                                     Recibo da Inscrição
                                 </h2>
+                                <a href="{{ route('inscricao.recibo', $inscricao) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg shadow-sm transition">
+                                    <i class="fa-solid fa-qrcode"></i> Ver recibo com QR Code
+                                </a>
                             </div>
                             <div class="p-6 space-y-3 text-sm">
                                 <div class="flex justify-between"><span class="text-slate-500">Evento:</span><span class="font-medium text-slate-800 text-right">{{ $inscricao->evento->nome }}</span></div>

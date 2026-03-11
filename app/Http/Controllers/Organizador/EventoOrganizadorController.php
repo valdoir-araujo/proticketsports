@@ -775,20 +775,32 @@ class EventoOrganizadorController extends Controller
         $this->authorize('update', $evento);
         $totalInscritos = $evento->inscricoes()->count();
         $totalCheckins = $evento->inscricoes()->where('checkin_realizado', true)->count();
-        $inscricoes = $evento->inscricoes()->with(['atleta.user', 'categoria', 'produtosOpcionais'])->whereIn('status', ['confirmada', 'aguardando_pagamento'])->get()
+        $inscricoes = $evento->inscricoes()->with(['atleta.user', 'categoria.percurso', 'produtosOpcionais'])->whereIn('status', ['confirmada', 'aguardando_pagamento'])->get()
             ->map(function ($inscricao) {
                 $nomeAtleta = optional(optional($inscricao->atleta)->user)->name ?? 'Atleta Desconhecido';
+                $percurso = optional(optional($inscricao->categoria)->percurso)->descricao ?? null;
                 return [
                     'id' => $inscricao->id,
                     'nome' => $nomeAtleta,
                     'iniciais' => strtoupper(substr($nomeAtleta, 0, 2)),
                     'cpf' => $inscricao->atleta->cpf ?? '',
+                    'codigo_inscricao' => $inscricao->codigo_inscricao ?? '',
                     'categoria' => optional($inscricao->categoria)->nome ?? 'Sem Categoria',
+                    'percurso' => $percurso,
                     'checkin_realizado' => (bool) $inscricao->checkin_realizado,
                     'numero_atleta' => $inscricao->numero_atleta,
                     'status' => $inscricao->status,
                     'metodo_pagamento' => $inscricao->metodo_pagamento,
-                    'produtos' => $inscricao->produtosOpcionais->map(function($prod) { return ['nome' => $prod->nome, 'tamanho' => $prod->pivot->tamanho ?? 'U', 'quantidade' => $prod->pivot->quantidade]; }), 'temp_numero' => ''
+                    'produtos' => $inscricao->produtosOpcionais->map(function ($prod) {
+                        return [
+                            'pivot_id' => $prod->pivot->id ?? null,
+                            'nome' => $prod->nome,
+                            'tamanho' => $prod->pivot->tamanho ?? 'U',
+                            'quantidade' => (int) ($prod->pivot->quantidade ?? 1),
+                            'entregue' => (bool) (isset($prod->pivot->entregue) ? $prod->pivot->entregue : true),
+                        ];
+                    })->values()->all(),
+                    'temp_numero' => $inscricao->numero_atleta !== null && $inscricao->numero_atleta !== '' ? (string) $inscricao->numero_atleta : ''
                 ];
             })->sortBy('nome')->values();
         return view('organizador.eventos.checkin', compact('evento', 'totalInscritos', 'totalCheckins', 'inscricoes'));
@@ -796,10 +808,32 @@ class EventoOrganizadorController extends Controller
 
     public function checkinStore(Request $request, Evento $evento, Inscricao $inscricao)
     {
-        if($inscricao->evento_id !== $evento->id) abort(403);
+        if ($inscricao->evento_id !== $evento->id) {
+            abort(403);
+        }
         $this->authorize('update', $evento);
-        $request->validate(['numero_atleta' => 'required|string|max:20']);
-        $inscricao->update(['checkin_realizado' => true, 'numero_atleta' => $request->numero_atleta, 'checkin_at' => now()]);
+        $request->validate([
+            'numero_atleta' => 'required|string|max:20',
+            'itens_entregues' => 'nullable|array',
+            'itens_entregues.*' => 'boolean',
+        ]);
+        $inscricao->update([
+            'checkin_realizado' => true,
+            'numero_atleta' => $request->numero_atleta,
+            'checkin_at' => now(),
+        ]);
+        $itensEntregues = $request->input('itens_entregues', []);
+        if (!empty($itensEntregues)) {
+            foreach ($itensEntregues as $pivotId => $entregue) {
+                if (!is_numeric($pivotId)) {
+                    continue;
+                }
+                \DB::table('inscricao_produto')
+                    ->where('id', $pivotId)
+                    ->where('inscricao_id', $inscricao->id)
+                    ->update(['entregue' => (bool) $entregue]);
+            }
+        }
         return response()->json(['success' => true]);
     }
 

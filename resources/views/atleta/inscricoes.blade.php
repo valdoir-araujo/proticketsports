@@ -59,6 +59,10 @@
                                                     <a href="{{ route('inscricao.show', $inscricao) }}" class="inline-flex items-center justify-center min-h-[44px] bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg text-xs sm:text-sm transition">
                                                         Detalhes
                                                     </a>
+                                                    <a href="{{ route('inscricao.recibo', $inscricao) }}" class="inline-flex items-center justify-center min-h-[44px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-lg text-xs sm:text-sm transition" title="Ver recibo com QR Code">
+                                                        <i class="fa-solid fa-receipt mr-1"></i>
+                                                        Recibo
+                                                    </a>
                                                     <a href="{{ route('inscricao.edit', $inscricao) }}" class="inline-flex items-center justify-center min-h-[44px] bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-3 rounded-lg text-xs sm:text-sm transition" title="Editar Inscrição">
                                                         <i class="fa-solid fa-pencil mr-1"></i>
                                                         <span>Editar</span>

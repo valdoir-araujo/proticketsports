@@ -26,6 +26,7 @@ use Illuminate\Validation\ValidationException;
 use App\Http\Requests\StoreInscricaoRequest;
 use App\Http\Requests\UpdateInscricaoRequest;
 use App\Mail\InscricaoRecebida;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class InscricaoController extends Controller
 {
@@ -533,6 +534,33 @@ class InscricaoController extends Controller
         if ($inscricao->atleta->user_id !== auth()->id()) { abort(403); }
         $inscricao->load('evento.eventoContatos', 'categoria', 'loteInscricao', 'produtosOpcionais', 'resultado');
         return view('inscricao.show', compact('inscricao'));
+    }
+
+    /**
+     * Recibo de confirmação de pagamento (mobile-first). Inclui QR Code com codigo_inscricao para check-in.
+     */
+    public function recibo(Inscricao $inscricao): View
+    {
+        if ($inscricao->atleta->user_id !== auth()->id()) {
+            abort(403);
+        }
+        $inscricao->load([
+            'evento',
+            'categoria.percurso',
+            'loteInscricao',
+            'equipe',
+            'produtosOpcionais',
+            'atleta.user',
+        ]);
+        $qrBase64 = null;
+        try {
+            $qrBase64 = base64_encode(
+                QrCode::format('png')->size(280)->margin(2)->generate($inscricao->codigo_inscricao)
+            );
+        } catch (\Throwable $e) {
+            // Se o pacote falhar, recibo ainda exibe sem QR
+        }
+        return view('inscricao.recibo', compact('inscricao', 'qrBase64'));
     }
 
     public function avatar(Inscricao $inscricao): View

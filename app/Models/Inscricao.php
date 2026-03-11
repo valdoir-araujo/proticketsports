@@ -122,7 +122,7 @@ class Inscricao extends Model
         // Certifique-se que o nome da tabela aqui ('inscricao_produto') 
         // é o mesmo que está no seu banco de dados.
         return $this->belongsToMany(ProdutoOpcional::class, 'inscricao_produto')
-            ->withPivot('quantidade', 'valor_pago_por_item', 'tamanho')
+            ->withPivot('id', 'quantidade', 'valor_pago_por_item', 'tamanho', 'entregue')
             ->withTimestamps();
     }
 }

@@ -84,12 +84,16 @@
                     </div>
                 </div>
                 
-                {{-- Botão "Hamburger" para Mobile (área de toque >= 44px) --}}
+                {{-- Botão "Hamburger" / "Fechar" para Mobile — um único ícone visível por vez (x-show) --}}
                 <div class="-mr-2 flex md:hidden">
-                    <button @click="open = !open" type="button" :aria-expanded="open" aria-controls="mobile-menu" class="relative inline-flex items-center justify-center rounded-lg p-3 min-w-[44px] min-h-[44px] text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 active:bg-gray-200 transition-colors">
-                        <span class="sr-only">Abrir menu principal</span>
-                        <i class="fa-solid fa-bars h-6 w-6" :class="{'hidden': open, 'block': !open }"></i>
-                        <i class="fa-solid fa-xmark h-6 w-6" :class="{'block': open, 'hidden': !open }"></i>
+                    <button @click="open = !open" type="button" :aria-expanded="open" aria-controls="mobile-menu" :aria-label="open ? 'Fechar menu' : 'Abrir menu'" class="relative inline-flex items-center justify-center rounded-lg p-3 min-w-[44px] min-h-[44px] text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 active:bg-gray-200 transition-colors">
+                        <span class="sr-only" x-text="open ? 'Fechar menu' : 'Abrir menu'"></span>
+                        <span class="inline-flex items-center justify-center w-6 h-6" x-show="!open" x-cloak x-transition style="display: none;">
+                            <i class="fa-solid fa-bars h-6 w-6" aria-hidden="true"></i>
+                        </span>
+                        <span class="inline-flex items-center justify-center w-6 h-6" x-show="open" x-transition style="display: none;">
+                            <i class="fa-solid fa-xmark h-6 w-6" aria-hidden="true"></i>
+                        </span>
                     </button>
                 </div>
             </div>

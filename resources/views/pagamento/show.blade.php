@@ -17,6 +17,13 @@
         </div>
     </div>
 
+    @if (session('sucesso'))
+        <div class="container mx-auto px-4 md:px-8 max-w-6xl mt-6">
+            <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-r shadow-sm">
+                <p class="text-sm text-green-700 font-bold">{{ session('sucesso') }}</p>
+            </div>
+        </div>
+    @endif
     @if ($errors->any())
         <div class="container mx-auto px-4 md:px-8 max-w-6xl mt-6">
             <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r shadow-sm">
@@ -25,14 +32,88 @@
         </div>
     @endif
 
+    @php $pagamentoManual = $pagamentoManual ?? false; $evento = $evento ?? $inscricao->evento; @endphp
+
     <div class="container mx-auto px-4 md:px-8 max-w-6xl mt-10">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-            {{-- COLUNA 1: ÁREA DE PAGAMENTO (igual à loja) --}}
-            <div class="lg:col-span-2 space-y-6" x-data="paymentDataInscricao()">
+            {{-- COLUNA 1: ÁREA DE PAGAMENTO --}}
+            <div class="lg:col-span-2 space-y-6" @if(!$pagamentoManual) x-data="paymentDataInscricao()" @endif>
                 <div>
-                    <h1 class="text-2xl font-black text-slate-800">Escolha a forma de pagamento</h1>
+                    <h1 class="text-2xl font-black text-slate-800">
+                        @if($pagamentoManual) Pagamento via PIX @else Escolha a forma de pagamento @endif
+                    </h1>
                     <p class="text-slate-500 text-sm mt-1">Finalize sua inscrição com segurança.</p>
                 </div>
+
+                @if($pagamentoManual)
+                    {{-- PAGAMENTO MANUAL: Chave PIX, QR Code e comprovante --}}
+                    <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-8 space-y-8">
+                        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                            <p class="text-sm text-emerald-800">
+                                <i class="fa-brands fa-pix mr-2"></i>
+                                Pague o valor de <strong>R$ {{ number_format($inscricao->valor_pago, 2, ',', '.') }}</strong> via PIX usando a chave ou o QR Code abaixo. Após pagar, anexe o comprovante.
+                            </p>
+                        </div>
+                        @if($evento->chave_pix ?? null)
+                            <div>
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block">Chave PIX</label>
+                                @php
+                                    $chave = $evento->chave_pix;
+                                    $tipo = $evento->chave_pix_tipo ?? '';
+                                    if ($tipo === 'cpf_cnpj' && strlen(preg_replace('/\D/', '', $chave)) === 11) {
+                                        $chaveFormatada = preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', preg_replace('/\D/', '', $chave));
+                                    } elseif ($tipo === 'cpf_cnpj' && strlen(preg_replace('/\D/', '', $chave)) === 14) {
+                                        $chaveFormatada = preg_replace('/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/', '$1.$2.$3/$4-$5', preg_replace('/\D/', '', $chave));
+                                    } else {
+                                        $chaveFormatada = $chave;
+                                    }
+                                @endphp
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <input type="text" value="{{ $chaveFormatada }}" readonly class="flex-1 min-w-0 bg-slate-50 border border-slate-200 text-slate-800 font-mono text-lg p-3 rounded-lg">
+                                    <button type="button" class="shrink-0 px-4 py-3 bg-slate-800 text-white rounded-lg font-bold text-sm hover:bg-slate-700 btn-copiar-pix" data-chave="{{ e($evento->chave_pix) }}">
+                                        <i class="fa-regular fa-copy mr-1"></i> <span class="btn-copiar-texto">Copiar</span>
+                                    </button>
+                                </div>
+                            </div>
+                        @endif
+                        @if($evento->qrcode_pix_url ?? null)
+                            <div>
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block">QR Code PIX</label>
+                                <div class="inline-block p-3 bg-white border-2 border-slate-100 rounded-xl shadow-sm">
+                                    <img src="{{ asset('storage/' . $evento->qrcode_pix_url) }}" alt="QR Code PIX" class="w-56 h-56 object-contain">
+                                </div>
+                            </div>
+                        @endif
+                        <div class="pt-6 border-t border-slate-200">
+                            <h3 class="text-lg font-bold text-slate-800 mb-2">Enviar comprovante de pagamento</h3>
+                            @if($inscricao->comprovante_pagamento_url ?? null)
+                                <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex flex-wrap items-center justify-between gap-4">
+                                    <div class="flex items-center gap-3">
+                                        <i class="fa-solid fa-circle-check text-green-600 text-xl"></i>
+                                        <div>
+                                            <p class="font-bold text-green-800">Comprovante enviado</p>
+                                            <p class="text-sm text-green-700">O organizador irá conferir e confirmar sua inscrição em breve.</p>
+                                        </div>
+                                    </div>
+                                    <a href="{{ asset('storage/' . $inscricao->comprovante_pagamento_url) }}" target="_blank" rel="noopener" class="text-sm font-bold text-green-700 hover:text-green-900 underline">Ver comprovante</a>
+                                </div>
+                                <p class="text-sm text-slate-500">Quer enviar outro? Envie novamente abaixo (o anterior será substituído).</p>
+                            @endif
+                            <form action="{{ route('pagamento.comprovante.store', $inscricao) }}" method="POST" enctype="multipart/form-data" class="mt-3">
+                                @csrf
+                                <div class="flex flex-wrap gap-3 items-end">
+                                    <div class="flex-1 min-w-[200px]">
+                                        <input type="file" name="comprovante" accept=".jpg,.jpeg,.png,.pdf" required class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                                        <p class="text-xs text-slate-500 mt-1">Imagem (JPEG, PNG) ou PDF. Máx. 5 MB.</p>
+                                    </div>
+                                    <button type="submit" class="shrink-0 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-colors">
+                                        <i class="fa-solid fa-upload mr-2"></i> Enviar comprovante
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                @else
 
                 <div x-show="errorMessage" style="display: none;" class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r shadow-sm">
                     <p class="text-sm text-red-700 font-bold" x-text="errorMessage"></p>
@@ -107,6 +188,7 @@
                         <div id="cardPaymentBrick_container_inscricao" class="min-h-[340px] w-full"></div>
                     </div>
                 </div>
+                @endif
 
                 <div class="text-center md:text-left mt-8">
                     <a href="{{ route('inscricao.show', $inscricao) }}" class="inline-flex items-center text-sm font-bold text-slate-400 hover:text-red-600 transition-colors gap-2 group">
@@ -143,7 +225,11 @@
                         </div>
                     </div>
                     <div class="bg-slate-100 p-4 text-center border-t border-slate-200">
-                        <img src="https://logopng.com.br/logos/mercado-pago-106.png" alt="Mercado Pago" class="h-5 opacity-50 grayscale mx-auto">
+                        @if($pagamentoManual)
+                            <p class="text-xs text-slate-500 font-medium"><i class="fa-brands fa-pix mr-1"></i> Pagamento via PIX — organizador confirmará manualmente</p>
+                        @else
+                            <img src="https://logopng.com.br/logos/mercado-pago-106.png" alt="Mercado Pago" class="h-5 opacity-50 grayscale mx-auto">
+                        @endif
                     </div>
                 </div>
             </div>
@@ -306,6 +392,27 @@
                 setCardErrorInscricao('Formulário de cartão indisponível. Use PIX para pagar.');
             });
     };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.btn-copiar-pix').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var chave = this.getAttribute('data-chave') || '';
+                var span = this.querySelector('.btn-copiar-texto');
+                if (!chave) return;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(chave).then(function() {
+                        if (span) span.textContent = 'Copiado!';
+                        setTimeout(function() { if (span) span.textContent = 'Copiar'; }, 2000);
+                    });
+                } else {
+                    var c = document.createElement('input'); c.value = chave; document.body.appendChild(c); c.select();
+                    document.execCommand('copy'); document.body.removeChild(c);
+                    if (span) span.textContent = 'Copiado!';
+                    setTimeout(function() { if (span) span.textContent = 'Copiar'; }, 2000);
+                }
+            });
+        });
+    });
 })();
 </script>
 @endpush

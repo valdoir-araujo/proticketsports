@@ -15,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class PagamentoController extends Controller
 {
@@ -106,7 +107,20 @@ class PagamentoController extends Controller
             }
         }
 
-        // 3. Verifica se o gateway de pagamento está configurado (evita erro genérico para o usuário)
+        $evento = $inscricao->evento;
+        $pagamentoManual = $evento->pagamento_manual ?? false;
+
+        // 3. Se pagamento manual: exibe chave PIX, QR Code e opção de anexar comprovante (não usa Mercado Pago)
+        if ($pagamentoManual) {
+            return view('pagamento.show', [
+                'inscricao' => $inscricao,
+                'evento' => $evento,
+                'pagamentoManual' => true,
+                'publicKey' => null,
+            ]);
+        }
+
+        // 4. Pagamento via Mercado Pago: verifica se o gateway está configurado
         $publicKey = config('services.mercadopago.public_key') ?: env('MERCADOPAGO_PUBLIC_KEY');
         $accessToken = config('services.mercadopago.access_token') ?: config('services.mercadopago.token')
             ?: env('MERCADOPAGO_ACCESS_TOKEN') ?: env('MERCADOPAGO_TOKEN');
@@ -116,8 +130,12 @@ class PagamentoController extends Controller
                 ->withErrors(['msg' => 'Pagamento temporariamente indisponível. Entre em contato com o organizador do evento.']);
         }
 
-        // 4. Exibe tela de pagamento (mesma regra da loja: sem preference; PIX/cartão via endpoint único)
-        return view('pagamento.show', compact('inscricao', 'publicKey'));
+        return view('pagamento.show', [
+            'inscricao' => $inscricao,
+            'evento' => $evento,
+            'pagamentoManual' => false,
+            'publicKey' => $publicKey,
+        ]);
     }
 
     /**
@@ -321,6 +339,48 @@ class PagamentoController extends Controller
             Log::error("Erro Webhook: " . $e->getMessage());
             return response()->json(['status' => 'erro'], 500);
         }
+    }
+
+    /**
+     * Recebe o comprovante de pagamento (pagamento manual). O organizador confirma manualmente depois.
+     */
+    public function storeComprovante(Request $request, Inscricao $inscricao): RedirectResponse
+    {
+        $user = $this->getPagamentoUser();
+        if (!$user) {
+            abort(403, 'Acesso não autorizado.');
+        }
+        $donoAtleta = $inscricao->atleta->user_id === $user->id;
+        $grupoDoUsuario = $inscricao->codigo_grupo && Inscricao::where('codigo_grupo', $inscricao->codigo_grupo)
+            ->whereHas('atleta', fn ($q) => $q->where('user_id', $user->id))
+            ->exists();
+        if (!$donoAtleta && !$grupoDoUsuario) {
+            abort(403, 'Acesso não autorizado.');
+        }
+
+        $evento = $inscricao->evento;
+        if (!($evento->pagamento_manual ?? false)) {
+            return redirect()->route('pagamento.show', $inscricao)
+                ->withErrors(['comprovante' => 'Este evento não utiliza pagamento manual.']);
+        }
+
+        $request->validate([
+            'comprovante' => 'required|file|mimes:jpeg,jpg,png,pdf|max:5120',
+        ], [
+            'comprovante.required' => 'Selecione o comprovante de pagamento.',
+            'comprovante.mimes' => 'Envie uma imagem (JPEG, PNG) ou PDF.',
+            'comprovante.max' => 'O arquivo deve ter no máximo 5 MB.',
+        ]);
+
+        if ($inscricao->comprovante_pagamento_url) {
+            Storage::disk('public')->delete($inscricao->comprovante_pagamento_url);
+        }
+
+        $path = $request->file('comprovante')->store('inscricoes/comprovantes', 'public');
+        $inscricao->update(['comprovante_pagamento_url' => $path]);
+
+        return redirect()->route('pagamento.show', $inscricao)
+            ->with('sucesso', 'Comprovante enviado com sucesso! O organizador irá conferir e confirmar seu pagamento.');
     }
 
     /**

@@ -145,6 +145,9 @@ class EventoOrganizadorController extends Controller
         if (!$organizacao && !$user->isAdmin()) {
             abort(403, 'Acesso negado.');
         }
+        if (!$organizacao && $user->isAdmin()) {
+            $organizacao = $evento->organizacao;
+        }
 
         // Uma única query para todas as estatísticas de inscrições (evita 5 queries)
         $inscricoesStats = $evento->inscricoes()
@@ -185,7 +188,29 @@ class EventoOrganizadorController extends Controller
 
         // Eager load para evitar N+1: campeonato na view; percursos com categorias
         $evento->load('campeonato');
-        $inscricoes = $evento->inscricoes()->with(['atleta.user', 'atleta.cidade.estado', 'categoria', 'equipe'])->orderBy('created_at', 'desc')->paginate(10, ['*'], 'inscritosPage');
+        $inscricoesQuery = $evento->inscricoes()->with(['atleta.user', 'atleta.cidade.estado', 'categoria', 'equipe'])->orderBy('created_at', 'desc');
+        $filtroCampo = $request->filled('filtro_campo') ? $request->filtro_campo : 'atleta';
+        $filtroValor = $request->filled('filtro_valor') ? trim($request->filtro_valor) : '';
+        if ($filtroValor !== '') {
+            if ($filtroCampo === 'atleta') {
+                $inscricoesQuery->whereHas('atleta.user', fn ($q) => $q->where('name', 'like', '%' . $filtroValor . '%'));
+            } elseif ($filtroCampo === 'equipe') {
+                $inscricoesQuery->whereHas('equipe', fn ($q) => $q->where('nome', 'like', '%' . $filtroValor . '%'));
+            } elseif ($filtroCampo === 'cidade') {
+                $inscricoesQuery->whereHas('atleta.cidade', fn ($q) => $q->where('nome', 'like', '%' . $filtroValor . '%'));
+            } elseif ($filtroCampo === 'status') {
+                $inscricoesQuery->where('status', $filtroValor);
+            } elseif ($filtroCampo === 'tipo') {
+                if (strtolower($filtroValor) === 'cortesia') {
+                    $inscricoesQuery->where('metodo_pagamento', 'Cortesia');
+                } else {
+                    $inscricoesQuery->where(function ($q) use ($filtroValor) {
+                        $q->whereNull('metodo_pagamento')->orWhere('metodo_pagamento', '!=', 'Cortesia');
+                    });
+                }
+            }
+        }
+        $inscricoes = $inscricoesQuery->paginate(10, ['*'], 'inscritosPage');
         $percursos = $evento->percursos()->with('categorias')->orderBy('id')->get();
         $repasses = method_exists($evento, 'repasses') ? $evento->repasses()->orderBy('data_repassado', 'desc')->paginate(10, ['*'], 'repassesPage') : collect();
         $percursoModelos = $organizacao->percursoModelos()->orderBy('descricao')->get();
@@ -289,6 +314,58 @@ class EventoOrganizadorController extends Controller
         ]);
         $evento->dadosBancarios()->updateOrCreate(['evento_id' => $evento->id], $validated);
         return redirect()->route('organizador.eventos.show', ['evento' => $evento, 'tab' => 'repasse'])->with('sucesso', 'Dados para repasse atualizados com sucesso!');
+    }
+
+    public function updateFormasPagamento(Request $request, Evento $evento): RedirectResponse
+    {
+        $this->authorize('update', $evento);
+
+        $pagamentoManual = $request->boolean('pagamento_manual');
+        $rules = [
+            'pagamento_manual' => 'required|boolean',
+            'aceite_responsabilidade' => $pagamentoManual ? 'accepted' : 'nullable',
+        ];
+        if ($pagamentoManual) {
+            $rules['chave_pix_tipo'] = 'required|string|in:cpf_cnpj,email,telefone,aleatoria';
+            $rules['chave_pix'] = 'required|string|max:255';
+            $rules['qrcode_pix'] = 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120';
+        }
+
+        $messages = [
+            'aceite_responsabilidade.accepted' => 'Para ativar o pagamento manual, você precisa marcar que assume a responsabilidade pelo controle de recebimento.',
+        ];
+        $request->validate($rules, $messages);
+
+        $data = [
+            'pagamento_manual' => $pagamentoManual,
+        ];
+
+        if ($pagamentoManual) {
+            $data['chave_pix_tipo'] = $request->input('chave_pix_tipo');
+            $data['chave_pix'] = $request->input('chave_pix');
+
+            if ($request->hasFile('qrcode_pix')) {
+                if ($evento->qrcode_pix_url) {
+                    Storage::disk('public')->delete($evento->qrcode_pix_url);
+                }
+                $path = $request->file('qrcode_pix')->store('eventos/qrcode-pix', 'public');
+                $data['qrcode_pix_url'] = $path;
+            }
+        } else {
+            $data['chave_pix'] = null;
+            $data['chave_pix_tipo'] = null;
+            if ($evento->qrcode_pix_url) {
+                Storage::disk('public')->delete($evento->qrcode_pix_url);
+                $data['qrcode_pix_url'] = null;
+            } else {
+                $data['qrcode_pix_url'] = null;
+            }
+        }
+
+        $evento->update($data);
+
+        return redirect()->route('organizador.eventos.show', ['evento' => $evento, 'tab' => 'formas_pgto'])
+            ->with('sucesso', 'Formas de pagamento atualizadas com sucesso!');
     }
 
     public function storeContato(Request $request, Evento $evento): RedirectResponse
@@ -408,6 +485,46 @@ class EventoOrganizadorController extends Controller
         return back()->with('sucesso', 'Inscrição de ' . $inscricao->atleta->user->name . ' confirmada como cortesia!');
     }
 
+    /**
+     * Exibe o comprovante de pagamento da inscrição (somente organizador do evento).
+     */
+    public function verComprovante(Inscricao $inscricao)
+    {
+        $this->authorize('update', $inscricao->evento);
+        if (!$inscricao->comprovante_pagamento_url) {
+            abort(404, 'Comprovante não encontrado.');
+        }
+        $path = Storage::disk('public')->path($inscricao->comprovante_pagamento_url);
+        if (!file_exists($path)) {
+            abort(404, 'Arquivo do comprovante não encontrado.');
+        }
+        return response()->file($path);
+    }
+
+    /**
+     * Alterna confirmação de pagamento: confirmada ↔ aguardando_pagamento.
+     * Só permite confirmar se houver comprovante anexado.
+     */
+    public function toggleConfirmarPagamento(Inscricao $inscricao): RedirectResponse
+    {
+        $this->authorize('update', $inscricao->evento);
+        $nome = $inscricao->atleta->user->name ?? 'Inscrição';
+        if ($inscricao->status === 'confirmada') {
+            $inscricao->update([
+                'status' => 'aguardando_pagamento',
+                'data_pagamento' => null,
+                'metodo_pagamento' => null,
+            ]);
+            return back()->with('sucesso', "Pagamento de {$nome} marcado como pendente.");
+        }
+        $inscricao->update([
+            'status' => 'confirmada',
+            'data_pagamento' => now(),
+            'metodo_pagamento' => $inscricao->metodo_pagamento ?: 'Pagamento manual',
+        ]);
+        return back()->with('sucesso', "Pagamento de {$nome} confirmado!");
+    }
+
     public function togglePublicList(Evento $evento): RedirectResponse
     {
         $this->authorize('update', $evento);
@@ -422,14 +539,14 @@ class EventoOrganizadorController extends Controller
         $query = $evento->inscricoes()->with(['atleta.user', 'categoria', 'equipe']);
 
         if ($request->has('status') && $request->status !== 'todos') {
-             $query->where('status', $request->status);
+             $query->where('inscricoes.status', $request->status);
         }
 
         if ($request->filled('data_inicio')) {
-            $query->whereDate('created_at', '>=', $request->data_inicio);
+            $query->whereDate('inscricoes.created_at', '>=', $request->data_inicio);
         }
         if ($request->filled('data_fim')) {
-            $query->whereDate('created_at', '<=', $request->data_fim);
+            $query->whereDate('inscricoes.created_at', '<=', $request->data_fim);
         }
 
         $query->join('atletas', 'inscricoes.atleta_id', '=', 'atletas.id')
@@ -472,7 +589,9 @@ class EventoOrganizadorController extends Controller
     public function gerarRelatorioFinanceiroPDF(Request $request, Evento $evento)
     {
         $this->authorize('view', $evento);
-        
+        $evento->load(['organizacao.cidade.estado']);
+        $organizacao = $evento->organizacao;
+
         $lancamentosQuery = $evento->lancamentosFinanceiros()->orderBy('data', 'desc');
         $inscricoesQuery = $evento->inscricoes()->where('status', 'confirmada');
 
@@ -491,9 +610,19 @@ class EventoOrganizadorController extends Controller
         $valorTotalRecebidoInscricoes = $inscricoesQuery->sum('valor_pago');
         $totalReceitas = $totalReceitasManuais + $valorTotalRecebidoInscricoes;
         $saldoFinal = $totalReceitas - $totalDespesas;
-        $periodo = $request->filled('data_inicio') ? 'Período: ' . date('d/m/Y', strtotime($request->data_inicio)) . ' até ' . ($request->filled('data_fim') ? date('d/m/Y', strtotime($request->data_fim)) : 'Hoje') : 'Período: Geral';
+        $periodo = $request->filled('data_inicio')
+            ? 'Período: ' . date('d/m/Y', strtotime($request->data_inicio)) . ' até ' . ($request->filled('data_fim') ? date('d/m/Y', strtotime($request->data_fim)) : 'Hoje')
+            : 'Período: Geral';
 
-        $pdf = Pdf::loadView('organizador.eventos.relatorio-financeiro-pdf', compact('evento', 'lancamentosFinanceiros', 'totalReceitas', 'totalDespesas', 'saldoFinal', 'periodo'));
+        $pdf = Pdf::loadView('organizador.eventos.relatorio-financeiro-pdf', compact(
+            'evento',
+            'organizacao',
+            'lancamentosFinanceiros',
+            'totalReceitas',
+            'totalDespesas',
+            'saldoFinal',
+            'periodo'
+        ));
         return $pdf->download('financeiro-' . $evento->slug . '.pdf');
     }
     

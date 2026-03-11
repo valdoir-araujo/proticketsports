@@ -1,5 +1,9 @@
+@php
+    $categoriasReceita = config('financeiro.categorias_receita', ['Patrocínio', 'Inscrições (manual)', 'Merchandising', 'Alimentação / Buffet', 'Outro']);
+    $categoriasDespesa = config('financeiro.categorias_despesa', ['Almoço / Refeição', 'Premiação', 'Material de consumo', 'Locação', 'Marketing / Divulgação', 'Transporte', 'Outro']);
+@endphp
 {{-- Conteúdo da Aba "Financeiro" --}}
-<div x-show="tab === 'financeiro'" style="display: none;" class="space-y-6">
+<div x-show="tab === 'financeiro'" style="display: none;" class="space-y-6" x-data="{ tipo: 'receita', categoriaSelect: '', categoriaOutra: '' }">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
        <div class="bg-green-100 p-6 rounded-lg shadow-sm">
            <p class="text-sm text-green-800">Total de Receitas</p>
@@ -29,6 +33,7 @@
                    <thead class="bg-gray-50">
                        <tr>
                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+                           <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Valor</th>
                        </tr>
@@ -37,6 +42,7 @@
                        @forelse ($lancamentosFinanceiros as $lancamento)
                            <tr>
                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ $lancamento->data->format('d/m/Y') }}</td>
+                               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{{ $lancamento->categoria ?? '—' }}</td>
                                <td class="px-4 py-3 text-sm text-gray-800">{{ $lancamento->descricao }}</td>
                                <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold {{ $lancamento->tipo == 'receita' ? 'text-green-600' : 'text-red-600' }}">
                                    {{ $lancamento->tipo == 'receita' ? '+' : '-' }} R$ {{ number_format($lancamento->valor, 2, ',', '.') }}
@@ -44,7 +50,7 @@
                            </tr>
                        @empty
                            <tr>
-                               <td colspan="3" class="px-4 py-4 text-center text-gray-500">Nenhum lançamento financeiro registado.</td>
+                               <td colspan="4" class="px-4 py-4 text-center text-gray-500">Nenhum lançamento financeiro registado.</td>
                            </tr>
                        @endforelse
                    </tbody>
@@ -60,7 +66,7 @@
                @csrf
                <div>
                    <x-input-label for="tipo" value="Tipo de Lançamento" />
-                   <select name="tipo" id="tipo" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                   <select name="tipo" id="tipo" x-model="tipo" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
                        <option value="receita">Receita</option>
                        <option value="despesa">Despesa</option>
                    </select>
@@ -78,8 +84,18 @@
                    <x-text-input id="data" name="data" type="date" class="mt-1 block w-full" required value="{{ now()->format('Y-m-d') }}" />
                </div>
                <div>
-                   <x-input-label for="categoria_financeiro" value="Categoria" />
-                   <x-text-input id="categoria_financeiro" name="categoria" type="text" class="mt-1 block w-full" placeholder="Ex: Patrocínio, Premiação..." required />
+                   <x-input-label for="categoria_financeiro" value="Categoria (analítica)" />
+                   <select id="categoria_receita" name="categoria" x-show="tipo === 'receita'" :disabled="tipo !== 'receita'" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                       @foreach($categoriasReceita as $cat)
+                           <option value="{{ $cat }}">{{ $cat }}</option>
+                       @endforeach
+                   </select>
+                   <select id="categoria_despesa" name="categoria" x-show="tipo === 'despesa'" :disabled="tipo !== 'despesa'" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" style="display: none;" required>
+                       @foreach($categoriasDespesa as $cat)
+                           <option value="{{ $cat }}">{{ $cat }}</option>
+                       @endforeach
+                   </select>
+                   <p class="mt-1 text-xs text-gray-500">Ex.: Patrocínio, Almoço, Premiação — facilita relatórios por tipo.</p>
                </div>
                <div>
                    <x-input-label for="comprovante" value="Comprovativo (Opcional)" />

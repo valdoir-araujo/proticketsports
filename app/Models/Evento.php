@@ -32,6 +32,10 @@ class Evento extends Model
         'status',
         'pontos_multiplicador',
         'taxaservico', // CORRIGIDO: Deve ser igual ao banco (minúsculo)
+        'pagamento_manual',
+        'chave_pix',
+        'chave_pix_tipo',
+        'qrcode_pix_url',
         'lista_inscritos_publica',
         'limite_vagas',
         'regulamento_tipo',
@@ -45,6 +49,7 @@ class Evento extends Model
         'data_inicio_inscricoes' => 'datetime',
         'data_fim_inscricoes' => 'datetime',
         'lista_inscritos_publica' => 'boolean',
+        'pagamento_manual' => 'boolean',
         'taxaservico' => 'decimal:2', // CORRIGIDO: Igual ao banco
         'regulamento_atualizado_em' => 'datetime',
     ];

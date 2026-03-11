@@ -33,6 +33,7 @@ class Inscricao extends Model
         'data_pagamento',
         'metodo_pagamento',
         'transacao_id_gateway',
+        'comprovante_pagamento_url',
         'codigo_inscricao',
         'dados_pagamento',
         

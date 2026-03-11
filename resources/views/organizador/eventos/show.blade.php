@@ -11,7 +11,7 @@
                     tab: 'inscritos',
                     init: function() {
                         this.tab = this.$el.getAttribute('data-initial-tab') || 'inscritos';
-                        var validTabs = ['financeiro', 'inscritos', 'percursos', 'lotes_gerais', 'produtos', 'cupons', 'contatos', 'regulamento', 'repasse', 'numeracao', 'resultados', 'relatorios'];
+                        var validTabs = ['financeiro', 'inscritos', 'percursos', 'lotes_gerais', 'produtos', 'cupons', 'contatos', 'regulamento', 'repasse', 'numeracao', 'formas_pgto', 'resultados', 'relatorios'];
                         var urlParams = new URLSearchParams(window.location.search);
                         var tabFromUrl = urlParams.get('tab');
                         var hash = window.location.hash.substring(1);
@@ -164,6 +164,7 @@
                                 'regulamento' => ['label' => 'Regulamento', 'icon' => 'fa-file-contract'],
                                 'numeracao' => ['label' => 'Numeração', 'icon' => 'fa-list-ol'],
                                 'relatorios' => ['label' => 'Relatórios', 'icon' => 'fa-file-lines'],
+                                'formas_pgto' => ['label' => 'Formas Pgto', 'icon' => 'fa-brands fa-pix'],
                                 'resultados' => ['label' => 'Resultados', 'icon' => 'fa-stopwatch', 'special' => true],
                             ];
                         @endphp
@@ -220,8 +221,9 @@
                     <div x-show="tab === 'repasse'" style="display: none;" class="animate-fade-in">@include('organizador.eventos.partials.aba-repasse')</div>
                     
                     <div x-show="tab === 'relatorios'" style="display: none;" class="animate-fade-in">@include('organizador.eventos.partials.aba-relatorios')</div>
-                    
-                    {{-- Conteúdo Check-in removido pois a aba foi removida --}}
+
+                    {{-- Formas de Pagamento (PIX manual, chave, QR Code) --}}
+                    <div x-show="tab === 'formas_pgto'" style="display: none;">@include('organizador.eventos.partials.aba-formas-pgto')</div>
 
                     {{-- Numeração (Card Moderno) --}}
                     <div x-show="tab === 'numeracao'" style="display: none;" class="animate-fade-in">

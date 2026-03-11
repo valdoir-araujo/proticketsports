@@ -96,6 +96,7 @@ Route::post('/inscricoes', [InscricaoController::class, 'store'])->name('inscric
 // Pagamento da inscrição (PIX/cartão) – protegido por dono/código do grupo dentro do controller, sem exigir login por senha.
 Route::get('/inscricao/{inscricao}/pagamento', [PagamentoController::class, 'show'])->name('pagamento.show');
 Route::post('/inscricao/{inscricao}/processar-pagamento', [PagamentoController::class, 'process'])->name('pagamento.process')->middleware('throttle:30,1');
+Route::post('/inscricao/{inscricao}/comprovante-pagamento', [PagamentoController::class, 'storeComprovante'])->name('pagamento.comprovante.store')->middleware('throttle:10,1');
 Route::get('/pagamento/{inscricao}/sucesso', [PagamentoController::class, 'sucesso'])->name('pagamento.sucesso');
 Route::get('/pagamento/{inscricao}/falha', [PagamentoController::class, 'falha'])->name('pagamento.falha');
 Route::get('/api/atletas/search', [InscricaoController::class, 'pesquisarAtleta'])->name('api.atletas.search');
@@ -293,11 +294,15 @@ Route::middleware('auth')->group(function () {
                 Route::patch('contatos/{evento_contato}', [EventoOrganizadorController::class, 'updateContato'])->name('contatos.update');
                 Route::delete('contatos/{evento_contato}', [EventoOrganizadorController::class, 'destroyContato'])->name('contatos.destroy');
                 Route::patch('regulamento', [EventoOrganizadorController::class, 'updateRegulamento'])->name('regulamento.update');
+                Route::patch('formas-pagamento', [EventoOrganizadorController::class, 'updateFormasPagamento'])->name('formas-pagamento.update');
             });
             
             Route::patch('resultados/{inscricao}', [EventoOrganizadorController::class, 'updateSingleResultado'])->name('eventos.resultados.updateSingle');
             Route::post('inscricoes/{inscricao}/confirmar-cortesia', [EventoOrganizadorController::class, 'confirmarCortesia'])->name('inscricoes.confirmarCortesia');
-            
+            Route::get('inscricoes/{inscricao}/comprovante', [EventoOrganizadorController::class, 'verComprovante'])->name('inscricoes.comprovante');
+            Route::post('inscricoes/{inscricao}/confirmar-pagamento', [EventoOrganizadorController::class, 'toggleConfirmarPagamento'])->name('inscricoes.toggleConfirmarPagamento');
+
+
             Route::resource('percursos/{percurso}/categorias', CategoriaController::class)->except(['show'])->scoped();
             
             Route::resource('categorias/{categoria}/lotes', LoteController::class)->except(['show', 'edit', 'update']);

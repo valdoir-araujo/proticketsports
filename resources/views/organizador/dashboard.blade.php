@@ -1,15 +1,9 @@
 <x-app-layout>
     {{-- Header Moderno com Identidade Visual (Azul Marinho + Laranja Forte) --}}
-    {{-- Mudança: Gradiente agora vai de Slate-900 para Blue-900, criando um azul marinho profundo --}}
     <div class="relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 pt-10 pb-32 overflow-hidden shadow-xl">
-        
-        {{-- Padrão de Pintinhas Laranjadas (Dots Pattern) --}}
-        {{-- Mudança: Aumentei a opacidade de 0.15 para 0.30 para os pontos ficarem "mais fortes" --}}
         <div class="absolute inset-0 opacity-30 pointer-events-none" 
              style="background-image: radial-gradient(#fb923c 1.5px, transparent 1.5px); background-size: 24px 24px;">
         </div>
-
-        {{-- Background Effects (Luzes Ambiente) --}}
         <div class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-orange-600/30 blur-3xl pointer-events-none mix-blend-screen animate-pulse-slow"></div>
         <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-blue-600/20 blur-3xl pointer-events-none mix-blend-screen"></div>
 
@@ -27,7 +21,6 @@
                 </p>
             </div>
 
-            {{-- Botão Voltar (Condicional) --}}
             @if(request()->has('org_id'))
                 <a href="{{ route('organizador.dashboard') }}" class="group flex items-center px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-all duration-300 text-white font-bold text-sm backdrop-blur-md shadow-lg hover:shadow-white/10 hover:-translate-y-0.5">
                     <i class="fa-solid fa-arrow-left mr-2 transition-transform group-hover:-translate-x-1 text-orange-400"></i>
@@ -154,11 +147,11 @@
             </a>
         </div>
 
-        {{-- Layout Principal: Duas Colunas --}}
+        {{-- Layout Principal: Duas Colunas (Eventos vêm primeiro no mobile) --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
             <!-- COLUNA DE CAMPEONATOS -->
-            <div class="bg-white rounded-2xl shadow-lg border border-slate-100 flex flex-col overflow-hidden ring-1 ring-slate-900/5">
+            <div class="bg-white rounded-2xl shadow-lg border border-slate-100 flex flex-col overflow-hidden ring-1 ring-slate-900/5 order-2 lg:order-1">
                 <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-indigo-50/80 to-white">
                     <h3 class="font-bold text-xl text-slate-800 flex items-center gap-3">
                         <span class="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/30">
@@ -223,7 +216,7 @@
             </div>
 
             <!-- COLUNA DE EVENTOS AVULSOS -->
-            <div class="bg-white rounded-2xl shadow-lg border border-slate-100 flex flex-col overflow-hidden ring-1 ring-slate-900/5">
+            <div class="bg-white rounded-2xl shadow-lg border border-slate-100 flex flex-col overflow-hidden ring-1 ring-slate-900/5 order-1 lg:order-2">
                 <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-orange-50/80 to-white">
                     <h3 class="font-bold text-xl text-slate-800 flex items-center gap-3">
                         <span class="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white shadow-md shadow-orange-500/30">

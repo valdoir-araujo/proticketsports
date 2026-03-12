@@ -19,10 +19,13 @@
         <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.8/dist/trix.css">
         <script type="text/javascript" src="https://unpkg.com/trix@2.0.8/dist/trix.umd.min.js" defer></script>
 
-        <!-- Scripts e Estilos (VITE) -->
-        <!-- O Vite já carrega o Alpine.js e o Tailwind nativamente no Laravel atual. -->
-        <!-- NÃO adicione CDNs do Alpine ou Tailwind aqui para evitar conflitos. -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <!-- Scripts e Estilos: Vite (build) ou CDN se build não existir (ex.: produção sem npm run build) -->
+        @if(file_exists(public_path('build/manifest.json')))
+            @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @else
+            <script src="https://cdn.tailwindcss.com"></script>
+            <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+        @endif
     </head>
     <body class="font-sans antialiased bg-slate-200 dark:bg-gray-900 overflow-x-hidden">
         <div class="min-h-screen min-w-0">

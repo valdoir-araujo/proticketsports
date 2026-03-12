@@ -15,7 +15,7 @@
             }
         @endphp
 
-        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-visible" x-data="{ open: false }" @click.outside="open = false">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-visible" id="main-nav">
             <div class="flex h-16 items-center justify-between">
                 {{-- Lado Esquerdo: Logo --}}
                 <div class="flex items-center">
@@ -84,22 +84,22 @@
                     </div>
                 </div>
                 
-                {{-- Botão "Hamburger" / "Fechar" para Mobile — um único ícone visível por vez --}}
+                {{-- Botão "Hamburger" / "Fechar" para Mobile (vanilla JS para funcionar sempre) --}}
                 <div class="-mr-2 flex md:hidden">
-                    <button @click.stop="open = !open" type="button" :aria-expanded="open" aria-controls="mobile-menu" :aria-label="open ? 'Fechar menu' : 'Abrir menu'" class="relative inline-flex items-center justify-center rounded-lg p-3 min-w-[44px] min-h-[44px] text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 active:bg-gray-200 transition-colors touch-manipulation">
-                        <span class="sr-only" x-text="open ? 'Fechar menu' : 'Abrir menu'"></span>
-                        <span class="inline-flex items-center justify-center w-6 h-6" x-show="!open" x-transition>
+                    <button type="button" id="mobile-menu-btn" aria-expanded="false" aria-controls="mobile-menu" aria-label="Abrir menu" class="relative inline-flex items-center justify-center rounded-lg p-3 min-w-[44px] min-h-[44px] text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 active:bg-gray-200 transition-colors touch-manipulation">
+                        <span class="sr-only" id="mobile-menu-btn-label">Abrir menu</span>
+                        <span class="inline-flex items-center justify-center w-6 h-6 mobile-menu-icon-bars">
                             <i class="fa-solid fa-bars h-6 w-6" aria-hidden="true"></i>
                         </span>
-                        <span class="inline-flex items-center justify-center w-6 h-6" x-show="open" x-transition style="display: none;">
+                        <span class="inline-flex items-center justify-center w-6 h-6 hidden mobile-menu-icon-close">
                             <i class="fa-solid fa-xmark h-6 w-6" aria-hidden="true"></i>
                         </span>
                     </button>
                 </div>
             </div>
 
-            {{-- Painel do menu mobile (z-50 para ficar acima do conteúdo do dashboard) --}}
-            <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="md:hidden border-t border-gray-100 bg-white shadow-lg relative z-50" id="mobile-menu">
+            {{-- Painel do menu mobile (oculto por padrão; vanilla JS controla abertura) --}}
+            <div class="md:hidden border-t border-gray-100 bg-white shadow-lg relative z-50 hidden transition-opacity duration-200" id="mobile-menu" role="dialog" aria-label="Menu mobile">
                 <div class="space-y-1 px-3 pb-4 pt-3 sm:px-4">
                     @auth
                         {{-- BOTÕES MOBILE INTELIGENTES --}}
@@ -141,4 +141,37 @@
                 </div>
             </div>
         </nav>
+        <script>
+        (function() {
+            var btn = document.getElementById('mobile-menu-btn');
+            var panel = document.getElementById('mobile-menu');
+            var label = document.getElementById('mobile-menu-btn-label');
+            var iconBars = panel && btn && btn.querySelector('.mobile-menu-icon-bars');
+            var iconClose = panel && btn && btn.querySelector('.mobile-menu-icon-close');
+            if (!btn || !panel) return;
+            function openMenu() {
+                panel.classList.remove('hidden');
+                btn.setAttribute('aria-expanded', 'true');
+                btn.setAttribute('aria-label', 'Fechar menu');
+                if (label) label.textContent = 'Fechar menu';
+                if (iconBars) iconBars.classList.add('hidden');
+                if (iconClose) iconClose.classList.remove('hidden');
+            }
+            function closeMenu() {
+                panel.classList.add('hidden');
+                btn.setAttribute('aria-expanded', 'false');
+                btn.setAttribute('aria-label', 'Abrir menu');
+                if (label) label.textContent = 'Abrir menu';
+                if (iconBars) iconBars.classList.remove('hidden');
+                if (iconClose) iconClose.classList.add('hidden');
+            }
+            function toggleMenu() {
+                if (panel.classList.contains('hidden')) openMenu(); else closeMenu();
+            }
+            btn.addEventListener('click', function(e) { e.stopPropagation(); toggleMenu(); });
+            document.addEventListener('click', function(e) {
+                if (!panel.classList.contains('hidden') && !btn.contains(e.target) && !panel.contains(e.target)) closeMenu();
+            });
+        })();
+        </script>
     </header>

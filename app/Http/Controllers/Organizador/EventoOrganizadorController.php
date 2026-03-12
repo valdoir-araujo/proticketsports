@@ -220,6 +220,11 @@ class EventoOrganizadorController extends Controller
             $editandoContato = $evento->eventoContatos()->find($request->editar_contato);
         }
 
+        $validTabs = ['financeiro', 'inscritos', 'percursos', 'lotes_gerais', 'produtos', 'cupons', 'contatos', 'regulamento', 'repasse', 'numeracao', 'formas_pgto', 'resultados', 'relatorios'];
+        $activeTab = $request->filled('tab') && in_array($request->tab, $validTabs, true)
+            ? $request->tab
+            : (session('tab', 'inscritos'));
+
         return view('organizador.eventos.show', compact(
             'evento', 'organizacao', 'totalInscritos', 'totalPendentes', 'totalConfirmados', 'valorTotalRecebido',
             'lancamentosFinanceiros', 'totalReceitas', 'totalDespesas', 'saldoFinal',
@@ -227,7 +232,8 @@ class EventoOrganizadorController extends Controller
             'totalArrecadado', 'taxaPlataforma', 'totalRepassado', 'valorAReceber',
             'repasses',
             'percursoModelos',
-            'editandoContato'
+            'editandoContato',
+            'activeTab'
         ));
     }
     

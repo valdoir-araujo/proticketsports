@@ -10,14 +10,16 @@
         window.checkinStorageKey = 'checkin_{{ $evento->slug ?? "event" }}';
 
         function checkinComponent() {
+            var storageKey = window.checkinStorageKey || 'checkin_event';
             var saved = {};
             try {
-                var raw = sessionStorage.getItem(window.checkinStorageKey);
+                var raw = sessionStorage.getItem(storageKey);
                 if (raw) saved = JSON.parse(raw);
             } catch (e) {}
+            var initialAtletas = Array.isArray(window.checkinData) ? window.checkinData : [];
             return {
-                search: saved.search || '',
-                atletas: Array.isArray(window.checkinData) ? window.checkinData : [],
+                search: (saved && typeof saved.search === 'string') ? saved.search : '',
+                atletas: initialAtletas,
                 processingId: null,
                 // QR Scanner
                 scanModalOpen: false,
@@ -65,6 +67,16 @@
                 showToast(message, type = 'success') {
                     this.toast = { show: true, message, type };
                     setTimeout(() => { this.toast.show = false; }, 3200);
+                },
+
+                saveSearchToStorage() {
+                    try {
+                        var key = window.checkinStorageKey || 'checkin_event';
+                        var o = {};
+                        try { var r = sessionStorage.getItem(key); if (r) o = JSON.parse(r); } catch(e) {}
+                        o.search = this.search;
+                        sessionStorage.setItem(key, JSON.stringify(o));
+                    } catch (e) {}
                 },
 
                 async openScan() {
@@ -245,27 +257,22 @@
 
                 init() {
                     var self = this;
-                    this.$watch('search', function(value) {
-                        try {
-                            var key = window.checkinStorageKey;
-                            var o = {};
-                            try { var r = sessionStorage.getItem(key); if (r) o = JSON.parse(r); } catch(e) {}
-                            o.search = value;
-                            sessionStorage.setItem(key, JSON.stringify(o));
-                        } catch (e) {}
-                    });
+                    if (self.atletas.length === 0 && Array.isArray(window.checkinData)) self.atletas = window.checkinData;
+                    self.$watch('search', function() { self.saveSearchToStorage(); });
+                    self.saveSearchToStorage();
                     window.addEventListener('beforeunload', function() {
-                        if (self.scannerInstance) {
-                            self.scannerInstance.stop().catch(function(){});
-                        }
+                        if (self.scannerInstance) self.scannerInstance.stop().catch(function(){});
                     });
                 }
             };
         }
-        document.addEventListener('alpine:init', function() { window.Alpine && window.Alpine.data('checkinComponent', checkinComponent); });
+        window.checkinComponent = checkinComponent;
+        document.addEventListener('alpine:init', function() {
+            if (window.Alpine) window.Alpine.data('checkinComponent', checkinComponent);
+        });
     </script>
 
-    <div class="min-h-screen bg-slate-100" x-data="checkinComponent()">
+    <div class="min-h-screen bg-slate-100" x-data="checkinComponent()" data-checkin-version="persist-v2">
         {{-- Hero + CTA Escanear --}}
         <div class="relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 pt-6 pb-8 sm:pt-8 sm:pb-10 overflow-hidden">
             <div class="absolute inset-0 opacity-30 pointer-events-none" style="background-image: radial-gradient(#0ea5e9 1px, transparent 1px); background-size: 20px 20px;"></div>
@@ -304,6 +311,7 @@
                             <i class="fa-solid fa-magnifying-glass"></i>
                         </div>
                         <input type="text" x-model="search"
+                               @blur="saveSearchToStorage()"
                                placeholder="Buscar por nome, código ou CPF..."
                                class="w-full h-14 pl-12 pr-4 rounded-2xl border-0 shadow-lg text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-white/50 font-medium">
                     </div>

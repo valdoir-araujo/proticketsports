@@ -7,11 +7,17 @@
             store: "{{ route('organizador.eventos.checkin.store', ['evento' => $evento->slug, 'inscricao' => 'ID_REF']) }}",
             undo: "{{ route('organizador.eventos.checkin.undo', ['evento' => $evento->slug, 'inscricao' => 'ID_REF']) }}"
         };
+        window.checkinStorageKey = 'checkin_{{ $evento->slug ?? "event" }}';
 
         function checkinComponent() {
+            var saved = {};
+            try {
+                var raw = sessionStorage.getItem(window.checkinStorageKey);
+                if (raw) saved = JSON.parse(raw);
+            } catch (e) {}
             return {
-                search: '',
-                atletas: window.checkinData || [],
+                search: saved.search || '',
+                atletas: Array.isArray(window.checkinData) ? window.checkinData : [],
                 processingId: null,
                 // QR Scanner
                 scanModalOpen: false,
@@ -235,9 +241,28 @@
                     } finally {
                         this.processingId = null;
                     }
+                },
+
+                init() {
+                    var self = this;
+                    this.$watch('search', function(value) {
+                        try {
+                            var key = window.checkinStorageKey;
+                            var o = {};
+                            try { var r = sessionStorage.getItem(key); if (r) o = JSON.parse(r); } catch(e) {}
+                            o.search = value;
+                            sessionStorage.setItem(key, JSON.stringify(o));
+                        } catch (e) {}
+                    });
+                    window.addEventListener('beforeunload', function() {
+                        if (self.scannerInstance) {
+                            self.scannerInstance.stop().catch(function(){});
+                        }
+                    });
                 }
             };
         }
+        document.addEventListener('alpine:init', function() { window.Alpine && window.Alpine.data('checkinComponent', checkinComponent); });
     </script>
 
     <div class="min-h-screen bg-slate-100" x-data="checkinComponent()">

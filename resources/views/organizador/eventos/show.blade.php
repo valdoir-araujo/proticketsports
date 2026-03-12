@@ -181,9 +181,8 @@
                                         'bg-white text-orange-600 border-t-4 border-orange-600 shadow-md font-extrabold': tab === '{{ $key }}', 
                                         'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-800 border border-slate-200': tab !== '{{ $key }}'
                                     }" 
-                                    class="group relative px-4 py-3 font-bold text-sm rounded-lg transition-all duration-200 flex items-center gap-2 touch-manipulation min-h-[44px] select-none">
+                                    class="group relative px-4 py-3 font-bold text-sm rounded-lg transition-all duration-200 flex items-center gap-2">
                                 
-                                {{-- Icone com cor condicional --}}
                                 <i class="fa-solid {{ $data['icon'] }} opacity-80 group-hover:opacity-100 transition-colors"
                                    :class="{ 'text-orange-600': tab === '{{ $key }}', 'text-slate-400': tab !== '{{ $key }}' }"></i>
                                 

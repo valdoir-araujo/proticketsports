@@ -81,28 +81,28 @@
                         }
                      }">
 
-                    {{-- Lado Esquerdo: Foto --}}
+                    {{-- Lado Esquerdo: Foto (label para mobile: toque = abre seletor nativo) --}}
                     @if(auth()->user()->isAtleta() && $user->atleta)
                         <div class="flex-shrink-0 w-full md:w-auto flex flex-col items-center gap-4">
-                            <div class="relative group cursor-pointer" @click="$refs.photoInput.click()">
+                            <label for="foto" class="relative group cursor-pointer block touch-manipulation" aria-label="Escolher foto de perfil">
                                 <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden shadow-inner ring-2 ring-slate-200/80 ring-offset-2 ring-offset-slate-50">
                                     <template x-if="photoPreview">
-                                        <img :src="photoPreview" class="w-full h-full object-cover">
+                                        <img :src="photoPreview" class="w-full h-full object-cover" alt="">
                                     </template>
                                     <template x-if="!photoPreview">
                                         @if ($user->atleta->profile_photo_url)
                                             <img src="{{ $user->atleta->profile_photo_url }}" alt="Foto do perfil" class="w-full h-full object-cover">
                                         @else
-                                            <i class="fa-solid fa-camera text-3xl text-slate-300"></i>
+                                            <i class="fa-solid fa-camera text-3xl text-slate-300" aria-hidden="true"></i>
                                         @endif
                                     </template>
                                 </div>
-                                <div class="absolute -bottom-1 -right-1 bg-white rounded-xl p-2 shadow-md border border-slate-200 text-slate-500 group-hover:text-orange-600 group-hover:bg-orange-50 transition-colors">
-                                    <i class="fa-solid fa-pen text-xs"></i>
-                                </div>
-                            </div>
+                                <span class="absolute -bottom-1 -right-1 bg-white rounded-xl p-2 shadow-md border border-slate-200 text-slate-500 group-hover:text-orange-600 group-hover:bg-orange-50 transition-colors pointer-events-none">
+                                    <i class="fa-solid fa-pen text-xs" aria-hidden="true"></i>
+                                </span>
+                            </label>
 
-                            <input type="file" name="foto" id="foto" class="hidden" accept="image/*" x-ref="photoInput" @change="onFileChange($event)">
+                            <input type="file" name="foto" id="foto" class="sr-only" accept="image/*" x-ref="photoInput" @change="onFileChange($event)">
                             <x-input-error :messages="$errors->get('foto')" />
                         </div>
                     @endif
@@ -180,32 +180,42 @@
                     </header>
 
                     {{-- Strava: logo abaixo do título Perfil do Atleta --}}
-                    <div class="mb-6 sm:mb-8 p-4 sm:p-5 bg-slate-50/80 rounded-2xl border border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center shrink-0 border border-orange-100 shadow-sm">
-                                <i class="fa-brands fa-strava text-2xl text-[#FC4C02]" aria-hidden="true"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-base font-bold text-slate-800">Strava</h3>
-                                <p class="text-sm text-slate-500">Conecte sua conta para sincronizar atividades automaticamente.</p>
-                            </div>
-                        </div>
-                        <div class="shrink-0">
-                            @if ($user->atleta->strava_id)
-                                <div class="flex items-center gap-3 bg-green-50 px-4 py-2.5 rounded-xl border border-green-200">
-                                    <div class="flex items-center gap-2 text-green-700 font-semibold text-sm">
-                                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                        Conectado
-                                    </div>
-                                    <div class="h-4 w-px bg-green-200"></div>
-                                    <a href="{{ route('strava.disconnect') }}" class="text-xs font-bold text-red-500 hover:text-red-700 transition">Desconectar</a>
+                    <div class="mb-6 sm:mb-8 space-y-4">
+                        <div class="p-4 sm:p-5 bg-slate-50/80 rounded-2xl border border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center shrink-0 border border-orange-100 shadow-sm">
+                                    <i class="fa-brands fa-strava text-2xl text-[#FC4C02]" aria-hidden="true"></i>
                                 </div>
-                            @else
-                                <a href="{{ route('strava.connect') }}" class="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 bg-[#FC4C02] hover:bg-[#e34402] text-white font-bold rounded-xl shadow-sm hover:shadow transition touch-manipulation">
-                                    Conectar Strava
-                                </a>
-                            @endif
+                                <div>
+                                    <h3 class="text-base font-bold text-slate-800">Strava</h3>
+                                    <p class="text-sm text-slate-500">Conecte sua conta para sincronizar atividades automaticamente.</p>
+                                </div>
+                            </div>
+                            <div class="shrink-0">
+                                @if ($user->atleta->strava_id)
+                                    <div class="flex items-center gap-3 bg-green-50 px-4 py-2.5 rounded-xl border border-green-200">
+                                        <div class="flex items-center gap-2 text-green-700 font-semibold text-sm">
+                                            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                            Conectado
+                                        </div>
+                                        <div class="h-4 w-px bg-green-200"></div>
+                                        <a href="{{ route('strava.disconnect') }}" class="text-xs font-bold text-red-500 hover:text-red-700 transition">Desconectar</a>
+                                    </div>
+                                @else
+                                    <a href="{{ route('strava.connect') }}" class="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 bg-[#FC4C02] hover:bg-[#e34402] text-white font-bold rounded-xl shadow-sm hover:shadow transition touch-manipulation">
+                                        Conectar Strava
+                                    </a>
+                                @endif
+                            </div>
                         </div>
+                        @if(isset($strava_redirect_uri) && isset($strava_callback_domain))
+                        <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-900">
+                            <p class="font-semibold mb-1"><i class="fa-solid fa-info-circle mr-1"></i> Se aparecer &quot;redirect_uri invalid&quot; no Strava:</p>
+                            <p class="mb-1">No painel do Strava (<a href="https://www.strava.com/settings/api" target="_blank" rel="noopener" class="underline">Settings → My API Application</a>), em <strong>Authorization Callback Domain</strong> use <strong>exatamente</strong>:</p>
+                            <code class="block bg-white px-2 py-1 rounded border border-amber-200 break-all">{{ $strava_callback_domain }}</code>
+                            <p class="mt-2 text-xs">URL de callback que este site usa: <code class="bg-white px-1 rounded break-all">{{ $strava_redirect_uri }}</code></p>
+                        </div>
+                        @endif
                     </div>
 
                     <div class="space-y-6 sm:space-y-8">

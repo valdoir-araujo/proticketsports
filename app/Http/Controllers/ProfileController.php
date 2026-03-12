@@ -12,6 +12,7 @@ use App\Models\Estado;
 use App\Models\Cidade;
 use App\Models\Equipe;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\StravaController;
 
 class ProfileController extends Controller
 {
@@ -28,11 +29,16 @@ class ProfileController extends Controller
         }
         $equipes = Equipe::orderBy('nome')->get();
 
+        $stravaRedirectUri = StravaController::redirectUriComputed();
+        $stravaCallbackDomain = parse_url($stravaRedirectUri, PHP_URL_HOST) ?: '';
+
         return view('profile.edit', [
             'user' => $user,
             'estados' => $estados,
             'cidades' => $cidades,
             'equipes' => $equipes,
+            'strava_redirect_uri' => $stravaRedirectUri,
+            'strava_callback_domain' => $stravaCallbackDomain,
         ]);
     }
 
@@ -62,7 +68,7 @@ class ProfileController extends Controller
                 'tipo_sanguineo' => 'nullable|string|max:3',
                 'contato_emergencia_nome' => 'nullable|string|max:255',
                 'contato_emergencia_telefone' => 'nullable|string|max:20',
-                'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:1024', // Validação da foto
+                'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048', // 2MB; webp para fotos de celular
             ]);
 
             // Lógica de upload da foto

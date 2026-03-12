@@ -13,23 +13,31 @@ class StravaController extends Controller
 {
     /**
      * URL de callback usada na autorização e na troca de token.
-     * Em produção usa HTTPS (Strava exige). STRAVA_REDIRECT_URI sobrescreve se definida no .env.
+     * Deve ser EXATAMENTE a mesma que o domínio configurado no Strava (Authorization Callback Domain).
+     * STRAVA_REDIRECT_URI no .env define a URL completa; senão usa APP_URL + /strava/callback.
      */
     private function getRedirectUri(): string
+    {
+        return self::redirectUriComputed();
+    }
+
+    /**
+     * Retorna a redirect_uri que será enviada ao Strava (para exibir no perfil ou debug).
+     */
+    public static function redirectUriComputed(): string
     {
         $config = config('services.strava.redirect_uri');
         if (!empty(trim((string) $config))) {
             return rtrim(trim($config), '/');
         }
-        $path = '/' . ltrim(route('strava.callback', [], false), '/');
-        if (app()->environment('production')) {
-            $base = rtrim(request()->getSchemeAndHttpHost() ?: config('app.url'), '/');
-            if (str_starts_with($base, 'http://')) {
-                $base = 'https://' . substr($base, 7);
-            }
-            return $base . $path;
+        $base = rtrim(config('app.url'), '/');
+        if (empty($base)) {
+            $base = 'http://localhost';
         }
-        return rtrim(config('app.url'), '/') . $path;
+        if (app()->environment('production') && str_starts_with($base, 'http://')) {
+            $base = 'https://' . substr($base, 7);
+        }
+        return $base . '/strava/callback';
     }
 
     /**
@@ -103,9 +111,11 @@ class StravaController extends Controller
                 'user_id' => $user->id,
                 'status' => $response->status(),
                 'body' => $response->body(),
+                'redirect_uri' => $redirectUri,
             ]);
+            $domain = parse_url($redirectUri, PHP_URL_HOST);
             return redirect()->route('profile.edit')->withErrors(
-                'Não foi possível obter os tokens do Strava. Verifique se a URL de callback no painel do Strava é: ' . $redirectUri
+                'Não foi possível obter os tokens do Strava. No painel do Strava (Settings > My API Application), em "Authorization Callback Domain" use exatamente: ' . ($domain ?: $redirectUri) . ' — e a URL de callback deve ser: ' . $redirectUri
             );
         }
 

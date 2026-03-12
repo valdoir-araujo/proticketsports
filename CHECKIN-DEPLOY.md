@@ -24,6 +24,25 @@ Solução definitiva em produção: rodar `npm run build` e enviar a pasta `publ
 
 ---
 
+## Perfil: Strava e foto no celular (produção)
+
+**Strava não conecta / erro "redirect_uri invalid"**
+
+- O Strava exige que a **URL de callback** enviada na autorização seja **exatamente** o domínio configurado no painel.
+- No **servidor** (.env), defina uma das opções:
+  - `APP_URL=https://www.proticketsports.com.br` (sem barra no final), **ou**
+  - `STRAVA_REDIRECT_URI=https://www.proticketsports.com.br/strava/callback` (recomendado em produção).
+- No [painel do Strava](https://www.strava.com/settings/api) → **My API Application** → **Authorization Callback Domain** coloque **só o domínio**, sem `https://` e sem caminho:
+  - `www.proticketsports.com.br`
+- A URL completa de callback deve ser exatamente: `https://www.proticketsports.com.br/strava/callback` (sem barra no final). Se o site usar outro domínio (ex.: sem www), use esse domínio no Strava e no .env.
+
+**Foto de perfil não sobe no smartphone**
+
+- O upload passou a usar um `<label for="foto">` no avatar: o toque na foto abre o seletor nativo (câmera/galeria) sem depender de clique por JavaScript.
+- O backend aceita até 2 MB e formato webp. Se ainda falhar, verifique no servidor: `upload_max_filesize` e `post_max_size` no PHP (recomendado ≥ 4M).
+
+---
+
 ## 1. Deploy do código
 - Faça pull do repositório (ou envie os arquivos atualizados).
 - As views ficam em `resources/views/organizador/eventos/checkin.blade.php`.

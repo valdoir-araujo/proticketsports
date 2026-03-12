@@ -341,6 +341,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/strava/callback', [StravaController::class, 'callback'])->name('strava.callback');
     Route::get('/strava/disconnect', [StravaController::class, 'disconnect'])->name('strava.disconnect');
 });
+
+// URL de callback do Strava (pública, para conferir no servidor e corrigir "redirect_uri invalid")
+Route::get('/strava/redirect-uri', function () {
+    $uri = \App\Http\Controllers\StravaController::redirectUriComputed();
+    $domain = parse_url($uri, PHP_URL_HOST) ?: '';
+    return response()->json([
+        'redirect_uri' => $uri,
+        'authorization_callback_domain' => $domain,
+        'instrucao' => 'No painel do Strava (Settings > My API Application) use em "Authorization Callback Domain" exatamente: ' . $domain,
+    ], 200, [], JSON_UNESCAPED_SLASHES);
+})->name('strava.redirect_uri');
+
 Route::get('/debug-php', function () {
     return [
         'Arquivo de Configuração (php.ini)' => php_ini_loaded_file(),

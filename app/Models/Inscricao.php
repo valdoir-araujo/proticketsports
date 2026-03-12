@@ -54,6 +54,10 @@ class Inscricao extends Model
         'tipo_pagamento_grupo',
         'codigo_grupo_parcial',
         'lote_inscricao_geral_id',
+
+        // Corrida: ritmo previsto (min/km) e pelotão de largada
+        'ritmo_previsto',
+        'pelotao_largada',
     ];
 
     /**

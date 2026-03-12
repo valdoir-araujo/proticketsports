@@ -1,6 +1,8 @@
 @extends('layouts.public')
 
-@section('title', $campeonato->nome . ' - Proticketsports')
+@section('title', $campeonato->nome . ' - ' . config('app.name'))
+@section('meta_description', $campeonato->nome . '. Etapas, rankings e inscrições. ' . config('app.name') . '.')
+@section('canonical', route('campeonatos.show', $campeonato))
 
 @push('styles')
     <style>[x-cloak] { display: none !important; }</style>

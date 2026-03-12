@@ -42,6 +42,10 @@
                                 <div class="flex justify-between"><span class="text-slate-500">Evento:</span><span class="font-medium text-slate-800 text-right">{{ $inscricao->evento->nome }}</span></div>
                                 <div class="flex justify-between"><span class="text-slate-500">Categoria:</span><span class="font-medium text-slate-800">{{ $inscricao->categoria->nome }}</span></div>
                                 <div class="flex justify-between"><span class="text-slate-500">Código:</span><span class="font-medium text-slate-800 font-mono">{{ $inscricao->codigo_inscricao }}</span></div>
+                                @if($inscricao->evento->isCorrida() && ($inscricao->ritmo_previsto || $inscricao->pelotao_largada))
+                                    @if($inscricao->ritmo_previsto)<div class="flex justify-between"><span class="text-slate-500">Ritmo previsto:</span><span class="font-medium text-slate-800">{{ $inscricao->ritmo_previsto }} min/km</span></div>@endif
+                                    @if($inscricao->pelotao_largada)<div class="flex justify-between"><span class="text-slate-500">Pelotão largada:</span><span class="font-medium text-slate-800">{{ $inscricao->pelotao_largada }}</span></div>@endif
+                                @endif
                                 <div class="flex justify-between"><span class="text-slate-500">Data do Pagamento:</span><span class="font-medium text-slate-800">{{ $inscricao->data_pagamento ? \Carbon\Carbon::parse($inscricao->data_pagamento)->format('d/m/Y \à\s H:i') : 'N/A' }}</span></div>
                                 <div class="flex justify-between border-t pt-3 mt-3"><span class="text-slate-500 font-bold">Valor Pago:</span><span class="font-bold text-lg text-green-700">R$ {{ number_format($inscricao->valor_pago, 2, ',', '.') }}</span></div>
                                 <div class="flex justify-between items-center"><span class="text-slate-500">Status:</span><span class="px-3 py-1 text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"><i class="fa-solid fa-check mr-1"></i> Confirmada</span></div>
@@ -163,6 +167,10 @@
                                             <i class="fa-solid fa-clock mr-1.5"></i> Aguardando Pagamento
                                         </span>
                                     </div>
+                                    @if($inscricao->evento->isCorrida() && ($inscricao->ritmo_previsto || $inscricao->pelotao_largada))
+                                        @if($inscricao->ritmo_previsto)<div><p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Ritmo previsto</p><p class="text-slate-800 font-medium">{{ $inscricao->ritmo_previsto }} min/km</p></div>@endif
+                                        @if($inscricao->pelotao_largada)<div><p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pelotão largada</p><p class="text-slate-800 font-medium">{{ $inscricao->pelotao_largada }}</p></div>@endif
+                                    @endif
                                 </div>
 
                                 @if($inscricao->produtosOpcionais->isNotEmpty())

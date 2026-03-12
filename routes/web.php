@@ -46,6 +46,7 @@ use App\Http\Controllers\Admin\ParceiroController as AdminParceiroController;
 use App\Http\Controllers\Admin\ContatoController as AdminContatoController;
 use App\Http\Controllers\ParceiroPublicoController;
 use App\Http\Controllers\ContatoController;
+use App\Http\Controllers\SitemapController;
 
 // Importações para as rotas de autenticação
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -86,6 +87,15 @@ Route::get('/campeonatos/{campeonato}', [CampeonatoPublicoController::class, 'sh
 
 Route::get('/parceiros', [ParceiroPublicoController::class, 'index'])->name('parceiros.index');
 Route::get('/contato', [ContatoController::class, 'index'])->name('contato.index');
+Route::get('/para-organizadores', fn () => view('para-organizadores'))->name('para-organizadores');
+
+// SEO: sitemap e robots (Google e outros buscadores)
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
+Route::get('/robots.txt', function () {
+    $url = rtrim(config('app.url'), '/');
+    $body = "User-agent: *\nDisallow:\nSitemap: {$url}/sitemap.xml\n";
+    return response($body, 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
+})->name('robots');
 
 // --- INSCRIÇÃO: IDENTIFICAÇÃO (CPF/email + data nascimento), sem login ---
 Route::get('/evento/{evento}/identificacao', [InscricaoController::class, 'identificacao'])->name('inscricao.identificacao');
@@ -171,7 +181,8 @@ Route::middleware('guest')->group(function () {
     Route::post('register', [RegisteredUserController::class, 'store']);
     
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
+    Route::post('login', [AuthenticatedSessionController::class, 'store'])
+        ->middleware('throttle:10,1');
 
     // Recuperação de Senha
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
@@ -266,6 +277,7 @@ Route::middleware('auth')->group(function () {
             Route::post('eventos/{evento}/lancamentos', [LancamentoFinanceiroController::class, 'store'])->name('lancamentos.store');
             
             Route::resource('eventos/{evento}/percursos', PercursoController::class)->except(['index', 'show', 'create', 'edit'])->scoped()->names('percursos');
+            Route::post('eventos/{evento}/percursos-modelo-corrida', [PercursoController::class, 'storePercursosModeloCorrida'])->name('percursos.modelo-corrida');
             Route::patch('eventos/{evento}/percursos/{percurso}/link', [PercursoController::class, 'link'])->name('percursos.link');
 
             Route::resource('eventos/{evento}/lotes-gerais', LoteInscricaoGeralController::class)->only(['store', 'update', 'destroy'])->names('lotes-gerais');

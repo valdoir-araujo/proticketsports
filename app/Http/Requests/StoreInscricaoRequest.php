@@ -62,6 +62,9 @@ class StoreInscricaoRequest extends FormRequest
             'produtos.*.tamanho' => 'nullable|string',
             'parceiro_id' => 'nullable|integer|exists:atletas,id',
             'tipo_pagamento_dupla' => 'nullable|in:unico,individual',
+            // Corrida: opcionais
+            'ritmo_previsto' => 'nullable|string|max:50',
+            'pelotao_largada' => 'nullable|string|max:50',
         ];
     }
 

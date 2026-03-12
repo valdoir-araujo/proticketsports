@@ -1,6 +1,8 @@
 @extends('layouts.public')
 
 @section('title', config('app.name') . ' - ' . config('app.tagline'))
+@section('meta_description', config('app.tagline') . '. Inscreva-se em corridas, ciclismo, triathlon e mais. Calendário de eventos, inscrições seguras, check-in e resultados.')
+@section('canonical', url()->current())
 
 @push('styles')
     <style>
@@ -304,6 +306,9 @@
                 <p class="text-lg text-slate-400">
                     Abandone as planilhas manuais. Tenha um painel completo, financeiro transparente e pagamentos automáticos.
                 </p>
+                <a href="{{ route('para-organizadores') }}" class="inline-block mt-4 text-orange-400 font-semibold hover:text-orange-300 transition-colors">
+                    Saiba mais sobre a plataforma para organizadores <i class="fa-solid fa-arrow-right ml-1"></i>
+                </a>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">

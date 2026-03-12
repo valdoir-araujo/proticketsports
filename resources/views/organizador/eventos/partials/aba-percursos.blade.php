@@ -8,6 +8,30 @@
         this.showEditModal = true;
     }
 }">
+    @if (session('erro'))
+        <div class="mb-6 p-4 text-sm text-red-700 bg-red-50 border-l-4 border-red-500 rounded-r-md flex items-center">
+            <i class="fa-solid fa-circle-exclamation mr-3 text-lg"></i>
+            {{ session('erro') }}
+        </div>
+    @endif
+
+    @if($evento->isCorrida() && $percursos->isEmpty())
+        <div class="mb-6 p-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h3 class="text-lg font-bold text-amber-900 flex items-center"><i class="fa-solid fa-person-running text-amber-600 mr-2"></i> Evento Corrida</h3>
+                    <p class="text-sm text-amber-800 mt-1">Crie os percursos 5K, 10K e 21K de uma vez. Depois configure categorias e lotes em cada percurso.</p>
+                </div>
+                <form method="POST" action="{{ route('organizador.percursos.modelo-corrida', $evento) }}" class="shrink-0">
+                    @csrf
+                    <button type="submit" class="inline-flex items-center px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg shadow transition-all">
+                        <i class="fa-solid fa-plus-circle mr-2"></i> Criar percursos 5K, 10K e 21K
+                    </button>
+                </form>
+            </div>
+        </div>
+    @endif
+
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
         
         {{-- Coluna da Esquerda: Lista de Percursos --}}

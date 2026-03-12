@@ -82,9 +82,9 @@ class EquipeController extends Controller
             if ($logoPath) {
                 Storage::disk('public')->delete($logoPath);
             }
-            
-            // Redireciona com erro. Em produção, evite $e->getMessage() e use uma mensagem genérica.
-            return redirect()->back()->withInput()->withErrors(['erro' => 'Erro ao criar equipe: ' . $e->getMessage()]);
+
+            // Redireciona com erro genérico para não expor detalhes internos em produção.
+            return redirect()->back()->withInput()->withErrors(['erro' => 'Erro ao criar equipe. Tente novamente ou entre em contato com o suporte.']);
         }
     }
     

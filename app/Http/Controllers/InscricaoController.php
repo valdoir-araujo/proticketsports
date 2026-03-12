@@ -40,7 +40,7 @@ class InscricaoController extends Controller
         if ($user && $user->atleta) {
             return redirect()->route('inscricao.create', $evento);
         }
-        if ($user && !$user->atleta && !$user->hasRole('admin')) {
+        if ($user && !$user->atleta && !$user->isAdmin()) {
             return redirect()->route('profile.edit')->with('info', 'Complete seu perfil de atleta para se inscrever.');
         }
         $evento->load('eventoContatos');
@@ -131,10 +131,10 @@ class InscricaoController extends Controller
         if (!$user) {
             return redirect()->route('inscricao.identificacao', $evento);
         }
-        if (!$user->atleta && !$user->hasRole('admin')) {
+        if (!$user->atleta && !$user->isAdmin()) {
             return redirect()->route('profile.edit')->with('info', 'Complete seu perfil de atleta.');
         }
-        if (!$user->atleta && $user->hasRole('admin')) {
+        if (!$user->atleta && $user->isAdmin()) {
             $user->setRelation('atleta', null);
         }
 
@@ -467,9 +467,16 @@ class InscricaoController extends Controller
                 $taxaParc = $valBaseParc * ($pctTaxa / 100);
                 $finalParc = $valBaseParc + $taxaParc;
 
+                // --- Corrida: ritmo previsto e pelotão (opcionais) ---
+                $corridaExtra = [];
+                if ($evento->isCorrida()) {
+                    $corridaExtra['ritmo_previsto'] = $dadosValidados['ritmo_previsto'] ?? null;
+                    $corridaExtra['pelotao_largada'] = $dadosValidados['pelotao_largada'] ?? null;
+                }
+
                 // --- SALVAR ---
                 
-                $inscricaoPrincipal = Inscricao::create([
+                $inscricaoPrincipal = Inscricao::create(array_merge([
                     'atleta_id' => $atletaPrincipal->id,
                     'evento_id' => $dadosValidados['evento_id'],
                     'categoria_id' => $categoria->id,
@@ -482,14 +489,14 @@ class InscricaoController extends Controller
                     'status' => 'aguardando_pagamento',
                     'codigo_inscricao' => 'PRTK-' . Str::upper(Str::random(8)),
                     'codigo_dupla' => $codigoDupla,
-                ]);
+                ], $corridaExtra));
     
                 if (!empty($produtosSync)) {
                     $inscricaoPrincipal->produtosOpcionais()->attach($produtosSync);
                 }
 
                 if ($isDupla && $parceiro) {
-                    $inscricaoParceiro = Inscricao::create([
+                    $inscricaoParceiro = Inscricao::create(array_merge([
                         'atleta_id' => $parceiro->id,
                         'evento_id' => $dadosValidados['evento_id'],
                         'categoria_id' => $categoria->id,
@@ -502,7 +509,7 @@ class InscricaoController extends Controller
                         'status' => 'aguardando_pagamento',
                         'codigo_inscricao' => 'PRTK-' . Str::upper(Str::random(8)),
                         'codigo_dupla' => $codigoDupla,
-                    ]);
+                    ], $corridaExtra));
                 }
             });
 

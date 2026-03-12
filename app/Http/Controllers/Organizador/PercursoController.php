@@ -15,6 +15,45 @@ class PercursoController extends Controller
     use AuthorizesRequests;
 
     /**
+     * Cria os percursos modelo Corrida (5K, 10K, 21K) para evento marcado como Corrida.
+     * Só disponível quando o evento não tem percursos e a modalidade é Corrida.
+     */
+    public function storePercursosModeloCorrida(Evento $evento): RedirectResponse
+    {
+        $this->authorize('update', $evento);
+
+        if (!$evento->isCorrida()) {
+            return redirect(route('organizador.eventos.show', [$evento, 'tab' => 'percursos']))
+                ->with('erro', 'Esta ação é válida apenas para eventos do tipo Corrida.');
+        }
+
+        if ($evento->percursos()->exists()) {
+            return redirect(route('organizador.eventos.show', [$evento, 'tab' => 'percursos']))
+                ->with('erro', 'O evento já possui percursos. Adicione manualmente ou remova os existentes.');
+        }
+
+        $modelo = [
+            ['descricao' => '5K',  'distancia_km' => 5,   'horario_largada' => '07:00', 'horario_alinhamento' => '06:45'],
+            ['descricao' => '10K', 'distancia_km' => 10,  'horario_largada' => '07:15', 'horario_alinhamento' => '07:00'],
+            ['descricao' => '21K', 'distancia_km' => 21.1, 'horario_largada' => '07:30', 'horario_alinhamento' => '07:15'],
+        ];
+
+        foreach ($modelo as $dados) {
+            $evento->percursos()->create([
+                'percurso_modelo_id' => null,
+                'descricao' => $dados['descricao'],
+                'distancia_km' => $dados['distancia_km'],
+                'altimetria_metros' => 0,
+                'horario_alinhamento' => $dados['horario_alinhamento'],
+                'horario_largada' => $dados['horario_largada'],
+            ]);
+        }
+
+        return redirect(route('organizador.eventos.show', [$evento, 'tab' => 'percursos']))
+            ->with('sucesso', 'Percursos modelo Corrida (5K, 10K, 21K) criados. Configure as categorias e lotes em cada percurso.');
+    }
+
+    /**
      * Salva um novo percurso para um evento, baseado num modelo da biblioteca.
      */
     public function store(Request $request, Evento $evento): RedirectResponse

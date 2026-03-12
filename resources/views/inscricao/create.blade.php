@@ -357,6 +357,23 @@
                         </select>
                         <div class="mt-2 text-right"><button type="button" @click="showTeamModal = true" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold py-2">Cadastrar Equipe <i class="fa-solid fa-plus-circle ml-1 text-xs"></i></button></div>
                     </div>
+
+                    {{-- Corrida: ritmo previsto e pelotão (opcionais) --}}
+                    @if($evento->isCorrida())
+                    <div class="form-group border-t pt-8 bg-amber-50/50 p-6 rounded-lg border border-amber-100">
+                        <p class="flex items-center text-lg font-semibold text-gray-800 mb-4"><i class="fa-solid fa-person-running text-orange-500 mr-3"></i> Dados para Corrida (opcional)</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="ritmo_previsto" class="block text-sm font-medium text-gray-700 mb-1">Ritmo previsto (min/km)</label>
+                                <input type="text" id="ritmo_previsto" name="ritmo_previsto" value="{{ old('ritmo_previsto') }}" maxlength="50" placeholder="ex: 5:30 ou 6:00" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 h-10 px-3">
+                            </div>
+                            <div>
+                                <label for="pelotao_largada" class="block text-sm font-medium text-gray-700 mb-1">Pelotão / Onda de largada</label>
+                                <input type="text" id="pelotao_largada" name="pelotao_largada" value="{{ old('pelotao_largada') }}" maxlength="50" placeholder="ex: A, B, 1 ou 2" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 h-10 px-3">
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                 </div>
             @endif
         </div>

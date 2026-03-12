@@ -1,6 +1,19 @@
 @extends('layouts.public')
 
 @section('title', $evento->nome . ' - ' . config('app.name'))
+@php
+    $localEvento = $evento->cidade ? $evento->cidade->nome . ($evento->cidade->estado ? ' - ' . $evento->cidade->estado->uf : '') : '';
+    $dataEvento = $evento->data_evento ? $evento->data_evento->format('d/m/Y') : '';
+    $descEvento = 'Inscrições para ' . $evento->nome . ($localEvento ? ' em ' . $localEvento : '') . ($dataEvento ? '. Data: ' . $dataEvento : '') . '. Inscreva-se online.';
+@endphp
+@section('meta_description', $descEvento)
+@section('canonical', route('eventos.public.show', $evento))
+@section('og_title', $evento->nome . ' - ' . config('app.name'))
+@section('og_description', $descEvento)
+@section('og_url', route('eventos.public.show', $evento))
+@if($evento->thumbnail_url || $evento->banner_url)
+@section('og_image', $evento->thumbnail_url ? asset('storage/' . $evento->thumbnail_url) : asset('storage/' . $evento->banner_url))
+@endif
 
 @section('content')
 

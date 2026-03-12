@@ -1,6 +1,8 @@
 @extends('layouts.public')
 
 @section('title', 'Calendário de Eventos - ' . config('app.name'))
+@section('meta_description', 'Calendário de corridas, ciclismo, triathlon e eventos esportivos. Veja datas, cidades e inscreva-se online.')
+@section('canonical', url()->current())
 
 @push('styles')
     <style>

@@ -15,7 +15,8 @@ class DatabaseSeeder extends Seeder
         // Chama os seeders na ordem desejada
         $this->call([
             LocalizacaoSeeder::class,
-            AdminUserSeeder::class, // <-- Linha adicionada
+            AdminUserSeeder::class,
+            ModalidadeSeeder::class,
         ]);
     }
 }

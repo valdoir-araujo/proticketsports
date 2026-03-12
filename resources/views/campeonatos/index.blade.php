@@ -1,6 +1,8 @@
 @extends('layouts.public')
 
 @section('title', 'Campeonatos - ' . config('app.name'))
+@section('meta_description', 'Campeonatos esportivos em andamento. Acompanhe etapas, rankings e inscrições para corridas e outras modalidades.')
+@section('canonical', url()->current())
 
 @push('styles')
     <style>

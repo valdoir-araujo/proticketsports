@@ -99,6 +99,7 @@
                       cidades: [],
                       estadoSelecionado: '{{ old('estado_id') }}',
                       cidadeSelecionada: '{{ old('cidade_id') }}',
+                      modalidadeNome: '',
                       async getCidades() {
                           if (!this.estadoSelecionado) { this.cidades = []; return; }
                           const response = await fetch(`/api/estados/${this.estadoSelecionado}/cidades`);
@@ -107,9 +108,13 @@
                           if (this.cidades.findIndex(c => c.id == this.cidadeSelecionada) === -1) {
                               this.cidadeSelecionada = '';
                           }
+                      },
+                      atualizarModalidadeNome(ev) {
+                          const opt = ev.target.selectedOptions?.[0];
+                          this.modalidadeNome = opt ? opt.textContent : '';
                       }
                   }"
-                  x-init="if (estadoSelecionado) { await getCidades() }">
+                  x-init="if (estadoSelecionado) { await getCidades() }; $nextTick(() => { const sel = document.getElementById('modalidade_id'); if (sel && sel.selectedIndex > 0) modalidadeNome = sel.options[sel.selectedIndex].textContent })">
                 @csrf
 
                 <input type="hidden" name="organizacao_id" value="{{ $organizacao->id }}">
@@ -140,13 +145,17 @@
                                 {{-- Modalidade --}}
                                 <div class="lg:col-span-1">
                                     <x-input-label for="modalidade_id" value="Modalidade" class="text-slate-700 font-bold" />
-                                    <select id="modalidade_id" name="modalidade_id" class="mt-1 block w-full border-slate-300 focus:border-orange-500 focus:ring-orange-500 rounded-lg shadow-sm" required>
+                                    <select id="modalidade_id" name="modalidade_id" class="mt-1 block w-full border-slate-300 focus:border-orange-500 focus:ring-orange-500 rounded-lg shadow-sm" required @change="atualizarModalidadeNome($event)">
                                         <option value="">Selecione...</option>
                                         @foreach($modalidades as $modalidade)
                                             <option value="{{ $modalidade->id }}" @selected(old('modalidade_id') == $modalidade->id)>{{ $modalidade->nome }}</option>
                                         @endforeach
                                     </select>
                                     <x-input-error :messages="$errors->get('modalidade_id')" class="mt-2" />
+                                    <div x-show="modalidadeNome && modalidadeNome.toLowerCase().includes('corrida')" x-cloak class="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                                        <p class="font-semibold flex items-center gap-2"><i class="fa-solid fa-person-running text-amber-600"></i> Evento Corrida</p>
+                                        <p class="mt-1">Depois de salvar, vá na aba <strong>Percursos</strong> do evento e use o botão <strong>«Criar percursos 5K, 10K e 21K»</strong> para configurar as distâncias rapidamente.</p>
+                                    </div>
                                 </div>
 
                                 {{-- Vincular a Campeonato --}}

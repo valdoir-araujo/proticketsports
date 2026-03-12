@@ -181,4 +181,17 @@ class Evento extends Model
     {
         return 'slug';
     }
+
+    /**
+     * Verifica se o evento é do tipo Corrida (modalidade nome contém "Corrida").
+     * Usado para exibir campos e fluxos específicos de corrida (ritmo, pelotão, percursos 5K/10K/21K).
+     */
+    public function isCorrida(): bool
+    {
+        if (!$this->relationLoaded('modalidade')) {
+            $this->load('modalidade');
+        }
+        $nome = $this->modalidade->nome ?? '';
+        return stripos($nome, 'Corrida') !== false;
+    }
 }

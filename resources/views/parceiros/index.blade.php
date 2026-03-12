@@ -1,6 +1,8 @@
 @extends('layouts.public')
 
 @section('title', 'Parceiros - ' . config('app.name'))
+@section('meta_description', 'Conheça os parceiros do ' . config('app.name') . '. Empresas e profissionais que apoiam o esporte.')
+@section('canonical', url()->current())
 
 @push('styles')
     <style>[x-cloak] { display: none !important; }</style>

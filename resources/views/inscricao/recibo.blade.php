@@ -62,6 +62,24 @@
                         <p class="font-medium text-slate-800">{{ $inscricao->equipe->nome ?? 'Individual' }}</p>
                     </div>
 
+                    {{-- Corrida: ritmo e pelotão --}}
+                    @if($inscricao->evento->isCorrida() && ($inscricao->ritmo_previsto || $inscricao->pelotao_largada))
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            @if($inscricao->ritmo_previsto)
+                                <div>
+                                    <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Ritmo previsto</h2>
+                                    <p class="font-medium text-slate-800">{{ $inscricao->ritmo_previsto }} min/km</p>
+                                </div>
+                            @endif
+                            @if($inscricao->pelotao_largada)
+                                <div>
+                                    <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Pelotão largada</h2>
+                                    <p class="font-medium text-slate-800">{{ $inscricao->pelotao_largada }}</p>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+
                     {{-- Produtos comprados --}}
                     @if($inscricao->produtosOpcionais->isNotEmpty())
                         <div>

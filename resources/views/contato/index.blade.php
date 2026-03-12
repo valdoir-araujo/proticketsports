@@ -1,6 +1,8 @@
 @extends('layouts.public')
 
 @section('title', 'Contato - ' . config('app.name'))
+@section('meta_description', 'Entre em contato com o ' . config('app.name') . '. Dúvidas sobre inscrições, eventos ou parcerias.')
+@section('canonical', url()->current())
 
 @push('styles')
     <style>[x-cloak] { display: none !important; }</style>

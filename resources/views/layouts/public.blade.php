@@ -8,7 +8,17 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>@yield('title', config('app.name') . ' - ' . config('app.tagline'))</title>
+    <meta name="description" content="@yield('meta_description', config('app.tagline') . '. Inscreva-se em corridas, ciclismo, triathlon e mais. Inscrições seguras, check-in e resultados.')">
+    @hasSection('canonical')<link rel="canonical" href="@yield('canonical')">@endif
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+
+    {{-- Open Graph (Facebook, WhatsApp, Google) --}}
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="pt_BR">
+    <meta property="og:title" content="@yield('og_title', config('app.name') . ' - ' . config('app.tagline'))">
+    <meta property="og:description" content="@yield('og_description', config('app.tagline') . '. Inscrições em eventos esportivos.')">
+    <meta property="og:url" content="@yield('og_url', url()->current())">
+    @hasSection('og_image')<meta property="og:image" content="@yield('og_image')">@endif
 
     {{-- Tailwind CSS --}}
     <script src="https://cdn.tailwindcss.com"></script>
@@ -106,6 +116,9 @@
                         <a href="{{ route('campeonatos.index') }}" class="px-3 py-2 rounded-md text-sm font-bold transition-colors {{ request()->routeIs('campeonatos.*') ? 'text-orange-600 bg-orange-50' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
                             Campeonatos
                         </a>
+                        <a href="{{ route('para-organizadores') }}" class="px-3 py-2 rounded-md text-sm font-bold transition-colors {{ request()->routeIs('para-organizadores') ? 'text-orange-600 bg-orange-50' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
+                            Para organizadores
+                        </a>
                         <a href="{{ route('parceiros.index') }}" class="px-3 py-2 rounded-md text-sm font-bold transition-colors {{ request()->routeIs('parceiros.*') ? 'text-orange-600 bg-orange-50' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
                             Parceiros
                         </a>
@@ -198,6 +211,7 @@
                 <a href="{{ route('welcome') }}" class="flex items-center rounded-lg px-4 py-3 min-h-[44px] text-base font-medium {{ request()->routeIs('welcome') ? 'bg-orange-50 text-orange-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">Início</a>
                 <a href="{{ route('eventos.public.index') }}" class="flex items-center rounded-lg px-4 py-3 min-h-[44px] text-base font-medium {{ request()->routeIs('eventos.public.*') ? 'bg-orange-50 text-orange-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">Eventos</a>
                 <a href="{{ route('campeonatos.index') }}" class="flex items-center rounded-lg px-4 py-3 min-h-[44px] text-base font-medium {{ request()->routeIs('campeonatos.*') ? 'bg-orange-50 text-orange-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">Campeonatos</a>
+                <a href="{{ route('para-organizadores') }}" class="flex items-center rounded-lg px-4 py-3 min-h-[44px] text-base font-medium {{ request()->routeIs('para-organizadores') ? 'bg-orange-50 text-orange-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">Para organizadores</a>
                 <a href="{{ route('parceiros.index') }}" class="flex items-center rounded-lg px-4 py-3 min-h-[44px] text-base font-medium {{ request()->routeIs('parceiros.*') ? 'bg-orange-50 text-orange-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">Parceiros</a>
                 <a href="{{ route('contato.index') }}" class="flex items-center rounded-lg px-4 py-3 min-h-[44px] text-base font-medium {{ request()->routeIs('contato.*') ? 'bg-orange-50 text-orange-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">Contato</a>
             </div>
@@ -267,7 +281,7 @@
                             <li><a href="#" class="hover:text-orange-500 transition-colors">Como funciona</a></li>
                             <li><a href="{{ route('politica.privacidade') }}" class="hover:text-orange-500 transition-colors">Política de Privacidade</a></li>
                             <li><a href="{{ route('politica.privacidade') }}" class="hover:text-orange-500 transition-colors">Termos de Uso</a></li>
-                            <li><a href="#" class="hover:text-orange-500 transition-colors">Área do Organizador</a></li>
+                            <li><a href="{{ route('para-organizadores') }}" class="hover:text-orange-500 transition-colors">Para organizadores</a></li>
                         </ul>
                     </div>
 

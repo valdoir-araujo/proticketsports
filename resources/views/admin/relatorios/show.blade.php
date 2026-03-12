@@ -34,7 +34,7 @@
                             <li class="py-3">
                                 <p class="font-semibold">R$ {{ number_format($repasse->valor_total_repassado, 2, ',', '.') }} <span class="text-gray-500 font-normal">em {{ $repasse->data_repassado->format('d/m/Y') }}</span></p>
                                 @if($repasse->comprovante_url)
-                                    <a href="{{ asset('storage/' . $repasse->comprovante_url) }}" target="_blank" class="text-sm text-indigo-600 hover:underline">Ver Comprovativo</a>
+                                    <button type="button" data-comprovante-url="{{ asset('storage/' . $repasse->comprovante_url) }}" class="modal-comprovante-trigger text-sm text-indigo-600 hover:underline cursor-pointer bg-transparent border-0 p-0 font-inherit">Ver Comprovativo</button>
                                 @endif
                             </li>
                         @empty
@@ -92,4 +92,46 @@
 
         </div>
     </div>
+
+    {{-- Modal do comprovante --}}
+    <div id="modal-comprovante" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog" aria-label="Comprovante de repasse">
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" id="modal-comprovante-backdrop"></div>
+        <div class="fixed inset-4 md:inset-8 lg:inset-12 flex flex-col items-center justify-center">
+            <div class="relative w-full h-full max-w-4xl max-h-[90vh] bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50 shrink-0">
+                    <h3 class="text-lg font-semibold text-gray-900">Comprovante</h3>
+                    <button type="button" id="modal-comprovante-close" class="p-2 rounded-lg text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-colors" aria-label="Fechar">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+                <div class="flex-1 min-h-0 p-4 overflow-auto">
+                    <iframe id="modal-comprovante-iframe" src="" class="w-full h-full min-h-[70vh] rounded-lg border border-gray-200" title="Comprovante"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function() {
+        var modal = document.getElementById('modal-comprovante');
+        var iframe = document.getElementById('modal-comprovante-iframe');
+        var backdrop = document.getElementById('modal-comprovante-backdrop');
+        var closeBtn = document.getElementById('modal-comprovante-close');
+        function open(url) {
+            iframe.src = url;
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        function close() {
+            modal.classList.add('hidden');
+            iframe.src = '';
+            document.body.style.overflow = '';
+        }
+        document.querySelectorAll('.modal-comprovante-trigger').forEach(function(btn) {
+            btn.addEventListener('click', function() { open(this.getAttribute('data-comprovante-url')); });
+        });
+        closeBtn.addEventListener('click', close);
+        backdrop.addEventListener('click', close);
+        modal.addEventListener('keydown', function(e) { if (e.key === 'Escape') close(); });
+    })();
+    </script>
 </x-app-layout>

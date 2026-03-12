@@ -85,7 +85,7 @@
                     @if(auth()->user()->isAtleta() && $user->atleta)
                         <div class="flex-shrink-0 w-full md:w-auto flex flex-col items-center gap-4">
                             <label for="foto" class="relative group cursor-pointer block touch-manipulation" aria-label="Escolher foto de perfil">
-                                <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden shadow-inner ring-2 ring-slate-200/80 ring-offset-2 ring-offset-slate-50">
+                                <div class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden shadow-inner ring-2 ring-slate-200/80 ring-offset-2 ring-offset-slate-50">
                                     <template x-if="photoPreview">
                                         <img :src="photoPreview" class="w-full h-full object-cover" alt="">
                                     </template>
@@ -96,6 +96,11 @@
                                             <i class="fa-solid fa-camera text-3xl text-slate-300" aria-hidden="true"></i>
                                         @endif
                                     </template>
+                                    @if($user->atleta->strava_profile_photo_url)
+                                        <span class="absolute bottom-0 left-0 w-8 h-8 rounded-full bg-[#FC4C02] flex items-center justify-center text-white shadow-md border-2 border-white" title="Foto do Strava">
+                                            <i class="fa-brands fa-strava text-sm" aria-hidden="true"></i>
+                                        </span>
+                                    @endif
                                 </div>
                                 <span class="absolute -bottom-1 -right-1 bg-white rounded-xl p-2 shadow-md border border-slate-200 text-slate-500 group-hover:text-orange-600 group-hover:bg-orange-50 transition-colors pointer-events-none">
                                     <i class="fa-solid fa-pen text-xs" aria-hidden="true"></i>
@@ -208,7 +213,7 @@
                                 @endif
                             </div>
                         </div>
-                        @if(isset($strava_redirect_uri) && isset($strava_callback_domain) && !$user->atleta->strava_id)
+                        @if(isset($strava_redirect_uri) && isset($strava_callback_domain) && !$user->atleta->strava_id && $user->isAdmin())
                         <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-900">
                             <p class="font-semibold mb-1"><i class="fa-solid fa-info-circle mr-1"></i> Se aparecer &quot;redirect_uri invalid&quot; no Strava:</p>
                             <p class="mb-1">No painel do Strava (<a href="https://www.strava.com/settings/api" target="_blank" rel="noopener" class="underline">Settings → My API Application</a>), em <strong>Authorization Callback Domain</strong> use <strong>exatamente</strong>:</p>

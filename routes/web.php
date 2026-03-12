@@ -330,6 +330,7 @@ Route::middleware('auth')->group(function () {
         Route::post('repasses', [RelatorioFinanceiroController::class, 'storeRepasseLote'])->name('repasses.store');
         Route::get('repasses/{repasse}', [RelatorioFinanceiroController::class, 'showRepasseLote'])->name('repasses.show');
         Route::patch('repasses/{repasse}', [RelatorioFinanceiroController::class, 'updateRepasseLote'])->name('repasses.update');
+        Route::post('repasses/{repasse}/estornar', [RelatorioFinanceiroController::class, 'estornarRepasse'])->name('repasses.estornar');
         Route::delete('repasses/{repasse}', [RelatorioFinanceiroController::class, 'destroyRepasseLote'])->name('repasses.destroy');
 
         Route::get('configuracoes', [ConfiguracaoController::class, 'index'])->name('configuracoes.index');

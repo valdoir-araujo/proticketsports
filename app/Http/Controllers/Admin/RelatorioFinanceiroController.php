@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Evento;
 use App\Models\Inscricao;
+use App\Models\Organizacao;
 use App\Models\Repasse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,7 +21,7 @@ class RelatorioFinanceiroController extends Controller
     {
         // Pega os lotes de repasse para exibir nas tabelas
         $repassesPendentes = Repasse::where('status', 'Pendente')->with('organizacao')->latest()->get();
-        $repassesRealizados = Repasse::whereIn('status', ['Realizado', 'Cancelado'])->with('organizacao')->latest()->paginate(10);
+        $repassesRealizados = Repasse::whereIn('status', ['Realizado', 'Cancelado', 'Estornado'])->with('organizacao')->latest()->paginate(10);
 
         // Calcula os totais da plataforma inteira para os cards de resumo
         $inscricoesConfirmadas = Inscricao::where('status', 'confirmada')->get();
@@ -34,6 +36,55 @@ class RelatorioFinanceiroController extends Controller
         $totalTransacoes = $inscricoes30dias->count();
         $ticketMedio = $totalTransacoes > 0 ? $faturamentoUltimos30Dias / $totalTransacoes : 0;
 
+        // Resumo por organizador (agregado)
+        $resumoPorOrganizador = Organizacao::has('eventos')->get()
+            ->map(function (Organizacao $org) {
+                $inscricoesConfirmadas = Inscricao::where('status', 'confirmada')
+                    ->whereHas('evento', fn ($q) => $q->where('organizacao_id', $org->id))
+                    ->get();
+                $totalInscricoes = $inscricoesConfirmadas->count();
+                $valorTotal = $inscricoesConfirmadas->sum('valor_pago');
+                $valorTaxa = $inscricoesConfirmadas->sum('taxa_plataforma');
+                $valorRepassado = Repasse::where('organizador_id', $org->id)->where('status', 'Realizado')->sum('valor_total_repassado');
+                $inscricoesSemRepasse = $inscricoesConfirmadas->whereNull('repasse_id');
+                $valorAPagar = $inscricoesSemRepasse->sum(fn ($i) => (float) $i->valor_pago - (float) $i->taxa_plataforma);
+                return (object) [
+                    'organizacao' => $org,
+                    'total_inscricoes' => $totalInscricoes,
+                    'valor_total' => $valorTotal,
+                    'valor_taxa' => $valorTaxa,
+                    'valor_pago' => $valorRepassado,
+                    'valor_a_pagar' => $valorAPagar,
+                ];
+            })
+            ->filter(fn ($r) => $r->total_inscricoes > 0)
+            ->values();
+
+        // Resumo por organizador e evento (com nome do evento)
+        $resumoPorOrganizadorEvento = Evento::whereHas('inscricoes', fn ($q) => $q->where('status', 'confirmada'))
+            ->with('organizacao')
+            ->orderBy('data_evento', 'desc')
+            ->get()
+            ->map(function (Evento $evento) {
+                $inscricoes = $evento->inscricoes()->where('status', 'confirmada')->get();
+                $totalInscricoes = $inscricoes->count();
+                $valorTotal = $inscricoes->sum('valor_pago');
+                $valorTaxa = $inscricoes->sum('taxa_plataforma');
+                $valorRepassado = Repasse::where('evento_id', $evento->id)->where('status', 'Realizado')->sum('valor_total_repassado');
+                $valorAPagar = $inscricoes->whereNull('repasse_id')->sum(fn ($i) => (float) $i->valor_pago - (float) $i->taxa_plataforma);
+                return (object) [
+                    'organizacao' => $evento->organizacao,
+                    'evento' => $evento,
+                    'total_inscricoes' => $totalInscricoes,
+                    'valor_total' => $valorTotal,
+                    'valor_taxa' => $valorTaxa,
+                    'valor_pago' => $valorRepassado,
+                    'valor_a_pagar' => $valorAPagar,
+                ];
+            })
+            ->filter(fn ($r) => $r->total_inscricoes > 0)
+            ->values();
+
         return view('admin.relatorios.financeiros.index', compact(
             'repassesPendentes',
             'repassesRealizados',
@@ -43,7 +94,9 @@ class RelatorioFinanceiroController extends Controller
             'faturamentoUltimos30Dias',
             'receitaUltimos30Dias',
             'totalTransacoes',
-            'ticketMedio'
+            'ticketMedio',
+            'resumoPorOrganizador',
+            'resumoPorOrganizadorEvento'
         ));
     }
 
@@ -71,13 +124,23 @@ class RelatorioFinanceiroController extends Controller
         ]);
         
         $inscricoes = Inscricao::with('evento')->find($dadosValidados['inscricao_ids']);
+
+        // Só inscrições confirmadas e ainda sem repasse
+        $invalidas = $inscricoes->filter(fn ($i) => $i->status !== 'confirmada' || $i->repasse_id !== null);
+        if ($invalidas->isNotEmpty()) {
+            return back()->with('error', 'Algumas inscrições selecionadas não estão confirmadas ou já pertencem a outro repasse. Remova-as e tente novamente.');
+        }
         
         if ($inscricoes->pluck('evento.organizacao_id')->unique()->count() > 1) {
             return back()->with('error', 'Só é possível criar um lote de repasse para um único organizador de cada vez.');
         }
 
         $evento = $inscricoes->first()->evento;
-        $valorTotal = $inscricoes->sum(fn($i) => $i->valor_pago - $i->taxa_plataforma);
+        $valorTotal = $inscricoes->sum(fn ($i) => (float) $i->valor_pago - (float) $i->taxa_plataforma);
+
+        if ($valorTotal <= 0) {
+            return back()->with('error', 'O valor total do lote deve ser maior que zero. Verifique se as inscrições têm valor pago e taxa corretos.');
+        }
 
         DB::transaction(function () use ($inscricoes, $valorTotal, $evento) {
             $repasse = Repasse::create([
@@ -141,6 +204,23 @@ class RelatorioFinanceiroController extends Controller
         });
 
         return redirect()->route('admin.relatorios.financeiros.index')->with('sucesso', 'Lote de repasse #' . $repasse->id . ' foi cancelado com sucesso.');
+    }
+
+    /**
+     * Estorna um repasse já realizado: libera as inscrições para novo repasse e marca o lote como Estornado.
+     */
+    public function estornarRepasse(Repasse $repasse): RedirectResponse
+    {
+        if ($repasse->status !== 'Realizado') {
+            return back()->with('error', 'Apenas repasses com status "Realizado" podem ser estornados.');
+        }
+
+        DB::transaction(function () use ($repasse) {
+            Inscricao::where('repasse_id', $repasse->id)->update(['repasse_id' => null]);
+            $repasse->update(['status' => 'Estornado']);
+        });
+
+        return redirect()->route('admin.relatorios.financeiros.index')->with('sucesso', 'Repasse #' . $repasse->id . ' foi estornado. As inscrições voltaram a ficar pendentes de repasse.');
     }
 }
 

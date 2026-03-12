@@ -25,8 +25,61 @@
 
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Todos os Eventos da Plataforma</h3>
 
-                    {{-- Tabela de Eventos --}}
-                    <div class="overflow-x-auto border rounded-lg">
+                    {{-- Mobile: Cards --}}
+                    <div class="md:hidden space-y-4">
+                        @forelse ($eventos as $evento)
+                            <div class="border border-gray-200 rounded-xl p-4 bg-white shadow-sm">
+                                <div class="font-semibold text-gray-900 mb-1">{{ $evento->nome }}</div>
+                                <div class="text-sm text-gray-500 mb-2">{{ $evento->cidade->nome ?? 'N/A' }} - {{ $evento->cidade->estado->uf ?? 'N/A' }}</div>
+                                <dl class="grid grid-cols-1 gap-1 text-sm mb-3">
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-500">Organização</dt>
+                                        <dd class="text-gray-700 font-medium">{{ $evento->organizacao->nome_fantasia ?? 'N/A' }}</dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-500">Data</dt>
+                                        <dd class="text-gray-700">{{ $evento->data_evento->format('d/m/Y') }}</dd>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <dt class="text-gray-500">Status</dt>
+                                        <dd>
+                                            @switch($evento->status)
+                                                @case('publicado')
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Publicado</span>
+                                                    @break
+                                                @case('rascunho')
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Rascunho</span>
+                                                    @break
+                                                @case('cancelado')
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Cancelado</span>
+                                                    @break
+                                                @default
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ ucfirst($evento->status) }}</span>
+                                            @endswitch
+                                        </dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-500">Taxa Adm</dt>
+                                        <dd class="text-gray-700 font-semibold">
+                                            @if($evento->taxaservico !== null)
+                                                <span class="text-blue-600">{{ $evento->taxaservico }}%</span>
+                                            @else
+                                                <span class="text-gray-400">Padrão (10%)</span>
+                                            @endif
+                                        </dd>
+                                    </div>
+                                </dl>
+                                <a href="{{ route('admin.eventos.edit', $evento) }}" class="block w-full text-center py-2.5 rounded-lg bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition-colors">
+                                    <i class="fa-solid fa-pen-to-square mr-1"></i> Editar
+                                </a>
+                            </div>
+                        @empty
+                            <p class="text-center text-sm text-gray-500 py-8">Nenhum evento encontrado.</p>
+                        @endforelse
+                    </div>
+
+                    {{-- Desktop: Tabela --}}
+                    <div class="hidden md:block overflow-x-auto border rounded-lg">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
@@ -34,7 +87,6 @@
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organização</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    {{-- NOVA COLUNA: Taxa --}}
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Taxa Adm</th>
                                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                                 </tr>
@@ -63,8 +115,6 @@
                                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ ucfirst($evento->status) }}</span>
                                             @endswitch
                                         </td>
-                                        
-                                        {{-- COLUNA DA TAXA (Mostra se é padrão ou personalizada) --}}
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-700">
                                             @if($evento->taxaservico !== null)
                                                 <span class="text-blue-600">{{ $evento->taxaservico }}%</span>
@@ -72,9 +122,7 @@
                                                 <span class="text-gray-400">Padrão (10%)</span>
                                             @endif
                                         </td>
-
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            {{-- BOTÃO EDITAR (Leva para a nova tela) --}}
                                             <a href="{{ route('admin.eventos.edit', $evento) }}" class="inline-flex items-center px-3 py-1 bg-indigo-50 border border-indigo-200 rounded text-indigo-700 hover:bg-indigo-100 transition-colors font-bold">
                                                 <i class="fa-solid fa-pen-to-square mr-1"></i> Editar
                                             </a>

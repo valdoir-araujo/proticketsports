@@ -3,7 +3,7 @@
     $categoriasDespesa = config('financeiro.categorias_despesa', ['Almoço / Refeição', 'Premiação', 'Material de consumo', 'Locação', 'Marketing / Divulgação', 'Transporte', 'Outro']);
 @endphp
 {{-- Conteúdo da Aba "Financeiro" --}}
-<div x-show="tab === 'financeiro'" style="display: none;" class="space-y-6" x-data="{ tipo: 'receita', categoriaSelect: '', categoriaOutra: '' }">
+<div class="space-y-6" x-data="{ tipo: 'receita', categoriaSelect: '', categoriaOutra: '' }">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
        <div class="bg-green-100 p-6 rounded-lg shadow-sm">
            <p class="text-sm text-green-800">Total de Receitas</p>

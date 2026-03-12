@@ -1,5 +1,5 @@
 {{-- Conteúdo da Aba "Produtos" --}}
-<div x-show="tab === 'produtos'" style="display: none;" class="space-y-8 animate-fade-in-up">
+<div class="space-y-8 animate-fade-in-up">
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
         
         {{-- Coluna da Esquerda: Lista de Produtos (2/3 width) --}}

@@ -1,5 +1,5 @@
 {{-- Conteúdo da Aba "Inscritos" --}}
-<div x-show="tab === 'inscritos'" style="display: none;" x-data="{ comprovanteUrl: null }">
+<div x-data="{ comprovanteUrl: null }">
     <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
         <section>
             <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

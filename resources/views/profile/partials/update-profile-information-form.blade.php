@@ -208,7 +208,7 @@
                                 @endif
                             </div>
                         </div>
-                        @if(isset($strava_redirect_uri) && isset($strava_callback_domain))
+                        @if(isset($strava_redirect_uri) && isset($strava_callback_domain) && !$user->atleta->strava_id)
                         <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-900">
                             <p class="font-semibold mb-1"><i class="fa-solid fa-info-circle mr-1"></i> Se aparecer &quot;redirect_uri invalid&quot; no Strava:</p>
                             <p class="mb-1">No painel do Strava (<a href="https://www.strava.com/settings/api" target="_blank" rel="noopener" class="underline">Settings → My API Application</a>), em <strong>Authorization Callback Domain</strong> use <strong>exatamente</strong>:</p>

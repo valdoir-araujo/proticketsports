@@ -154,11 +154,10 @@
             {{-- Tabs & Content Container --}}
             <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden min-h-[500px]">
                 
-                {{-- Tabs Navigation (ESTILO "ABAS COM BORDA TOPO" + QUEBRA DE LINHA) --}}
-                <div class="bg-slate-50 border-b border-slate-200 p-4">
-                    <nav class="flex flex-wrap gap-2 justify-center sm:justify-start">
+                {{-- Tabs Navigation: links puros para celular (touch-action, z-index, área de toque) --}}
+                <div class="bg-slate-50 border-b border-slate-200 p-4 relative z-10" style="touch-action: manipulation;">
+                    <nav class="flex flex-wrap gap-2 justify-center sm:justify-start" style="touch-action: manipulation;">
                         @php
-                            // Removido 'repasse' do array para não aparecer na lista de abas, pois agora está no header
                             $tabs = [
                                 'financeiro' => ['label' => 'Financeiro', 'icon' => 'fa-cash-register'],
                                 'inscritos' => ['label' => 'Inscritos', 'icon' => 'fa-users'],
@@ -176,12 +175,17 @@
                         @endphp
 
                         @foreach($tabs as $key => $data)
-                            @php $isActive = ($activeTab ?? '') === $key; @endphp
-                            <a href="{{ route('organizador.eventos.show', ['evento' => $evento, 'tab' => $key]) }}"
-                               class="group relative px-4 py-3 font-bold text-sm rounded-lg transition-all duration-200 flex items-center gap-2 min-h-[44px] {{ $isActive ? 'bg-white text-orange-600 border-t-4 border-orange-600 shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-800 border border-slate-200' }}">
-                                <i class="fa-solid {{ $data['icon'] }} opacity-80 group-hover:opacity-100 transition-colors {{ $isActive ? 'text-orange-600' : 'text-slate-400' }}"></i>
-                                {{ $data['label'] }}
-                            </a>
+                            @php
+                                $isActive = ($activeTab ?? '') === $key;
+                                $url = route('organizador.eventos.show', ['evento' => $evento, 'tab' => $key]);
+                            @endphp
+                            <form method="GET" action="{{ $url }}" class="inline-block" style="touch-action: manipulation;">
+                                <button type="submit"
+                                        class="w-full group relative px-4 py-3 font-bold text-sm rounded-lg transition-all duration-200 flex items-center justify-center gap-2 min-h-[48px] min-w-[120px] cursor-pointer select-none {{ $isActive ? 'bg-white text-orange-600 border-t-4 border-orange-600 shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-800 border border-slate-200' }}">
+                                    <i class="fa-solid {{ $data['icon'] }} opacity-80 {{ $isActive ? 'text-orange-600' : 'text-slate-400' }}"></i>
+                                    <span>{{ $data['label'] }}</span>
+                                </button>
+                            </form>
                         @endforeach
                     </nav>
                 </div>

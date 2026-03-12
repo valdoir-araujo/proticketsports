@@ -83,9 +83,8 @@
                             <i class="fa-solid fa-pen-to-square mr-2"></i> Editar
                         </a>
 
-                        {{-- Botão Repasse (link funciona sem JS; com JS evita recarregar) --}}
+                        {{-- Botão Repasse (link normal para funcionar no celular) --}}
                         <a href="{{ route('organizador.eventos.show', ['evento' => $evento, 'tab' => 'repasse']) }}"
-                           @click.prevent="tab = 'repasse'"
                            class="inline-flex items-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-900/50 transition-all hover:-translate-y-0.5 border border-emerald-500/50 touch-manipulation min-h-[44px]">
                             <i class="fa-solid fa-money-bill-transfer mr-2"></i> Repasse
                         </a>
@@ -179,16 +178,8 @@
                         @foreach($tabs as $key => $data)
                             @php $isActive = ($activeTab ?? '') === $key; @endphp
                             <a href="{{ route('organizador.eventos.show', ['evento' => $evento, 'tab' => $key]) }}"
-                               @click.prevent="tab = '{{ $key }}'"
-                               :class="{ 
-                                   'bg-white text-orange-600 border-t-4 border-orange-600 shadow-md font-extrabold': tab === '{{ $key }}', 
-                                   'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-800 border border-slate-200': tab !== '{{ $key }}'
-                               }" 
-                               class="group relative px-4 py-3 font-bold text-sm rounded-lg transition-all duration-200 flex items-center gap-2 {{ $isActive ? 'bg-white text-orange-600 border-t-4 border-orange-600 shadow-md' : 'bg-white text-slate-600 border border-slate-200' }}">
-                                
-                                <i class="fa-solid {{ $data['icon'] }} opacity-80 group-hover:opacity-100 transition-colors {{ $isActive ? 'text-orange-600' : 'text-slate-400' }}"
-                                   :class="{ 'text-orange-600': tab === '{{ $key }}', 'text-slate-400': tab !== '{{ $key }}' }"></i>
-                                
+                               class="group relative px-4 py-3 font-bold text-sm rounded-lg transition-all duration-200 flex items-center gap-2 min-h-[44px] {{ $isActive ? 'bg-white text-orange-600 border-t-4 border-orange-600 shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-800 border border-slate-200' }}">
+                                <i class="fa-solid {{ $data['icon'] }} opacity-80 group-hover:opacity-100 transition-colors {{ $isActive ? 'text-orange-600' : 'text-slate-400' }}"></i>
                                 {{ $data['label'] }}
                             </a>
                         @endforeach

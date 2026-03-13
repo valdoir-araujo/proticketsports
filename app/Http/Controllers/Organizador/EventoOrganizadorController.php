@@ -485,6 +485,7 @@ class EventoOrganizadorController extends Controller
         $inscricao->update([
             'status' => 'confirmada',
             'valor_pago' => 0.00,
+            'taxa_plataforma' => 0.00,
             'data_pagamento' => now(),
             'metodo_pagamento' => 'Cortesia',
         ]);

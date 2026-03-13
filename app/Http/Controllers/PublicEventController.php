@@ -89,7 +89,7 @@ class PublicEventController extends Controller
     }
 
     /**
-     * Exibe a página dedicada com a lista de inscritos de um evento.
+     * Exibe a página dedicada com a lista de inscritos de um evento (com paginação).
      */
     public function showInscritos(Evento $evento): View
     {
@@ -97,37 +97,42 @@ class PublicEventController extends Controller
             abort(404);
         }
 
-        // 1. Busca inscrições válidas (limit evita pico de memória em eventos muito grandes; para > 2000 considere paginação na view).
-        $inscricoes = Inscricao::where('evento_id', $evento->id)
-            ->where('status', '!=', 'cancelada')
+        // Lista de categorias para o filtro (query leve, independente da página).
+        $categoriasParaFiltro = \App\Models\Categoria::whereHas('inscricoes', function ($q) use ($evento) {
+            $q->where('evento_id', $evento->id)->where('status', '!=', 'cancelada');
+        })
+            ->with('percurso:id,descricao')
+            ->get()
+            ->map(function ($cat) {
+                if ($cat->percurso) {
+                    return $cat->percurso->descricao . ' | ' . $cat->nome . ' - ' . ucfirst($cat->genero ?? '');
+                }
+                return $cat->nome . ' - ' . ucfirst($cat->genero ?? '');
+            })
+            ->unique()
+            ->sort()
+            ->values();
+
+        // Inscrições paginadas (ordenadas por percurso, categoria, nome).
+        $inscricoes = Inscricao::where('inscricoes.evento_id', $evento->id)
+            ->where('inscricoes.status', '!=', 'cancelada')
             ->has('atleta.user')
             ->with(['atleta.user', 'atleta.cidade.estado', 'equipe', 'categoria.percurso'])
-            ->limit(2000)
-            ->get();
+            ->join('atletas', 'inscricoes.atleta_id', '=', 'atletas.id')
+            ->join('users', 'atletas.user_id', '=', 'users.id')
+            ->join('categorias', 'inscricoes.categoria_id', '=', 'categorias.id')
+            ->join('percursos', 'categorias.percurso_id', '=', 'percursos.id')
+            ->orderBy('percursos.id')
+            ->orderBy('categorias.id')
+            ->orderBy('users.name')
+            ->select('inscricoes.*')
+            ->paginate(80, ['*'], 'page');
 
-        // --- LÓGICA DE ORDENAÇÃO AJUSTADA ---
-        // A lista é agora ordenada pelo ID do percurso, depois pelo ID da categoria,
-        // e finalmente pelo nome do atleta.
-        $inscricoes = $inscricoes->sortBy([
-            'categoria.percurso_id',
-            'categoria_id',
-            'atleta.user.name',
-        ])->values();
-
-        // 2. Prepara a lista de categorias para o dropdown de filtro.
-        $categoriasParaFiltro = $inscricoes->map(function ($inscricao) {
-            if ($inscricao->categoria && $inscricao->categoria->percurso) {
-                return $inscricao->categoria->percurso->descricao . ' | ' . $inscricao->categoria->nome . ' - ' . ucfirst($inscricao->categoria->genero);
-            }
-            return null;
-        })->filter()->unique()->sort()->values();
-
-        // 3. Envia as variáveis prontas para a view.
         return view('eventos.public.inscritos', compact('evento', 'inscricoes', 'categoriasParaFiltro'));
     }
 
     /**
-     * Exibe a página pública de resultados de um evento (somente leitura).
+     * Exibe a página pública de resultados de um evento (somente leitura, com paginação na lista).
      */
     public function showResultados(Evento $evento): View
     {
@@ -135,22 +140,15 @@ class PublicEventController extends Controller
             abort(404);
         }
 
-        $inscricoes = Inscricao::query()
-            ->where('inscricoes.evento_id', $evento->id)
-            ->where('inscricoes.status', 'confirmada')
-            ->with(['atleta.user', 'atleta.equipe', 'equipe', 'categoria.percurso', 'resultado'])
-            ->join('categorias', 'inscricoes.categoria_id', '=', 'categorias.id')
-            ->join('percursos', 'categorias.percurso_id', '=', 'percursos.id')
-            ->orderBy('percursos.id')
-            ->orderBy('categorias.id')
-            ->select('inscricoes.*')
-            ->limit(3000)
+        // Ranking de equipes (calculado sobre todos os inscritos com resultado).
+        $inscricoesParaRanking = Inscricao::query()
+            ->where('evento_id', $evento->id)
+            ->where('status', 'confirmada')
+            ->whereNotNull('equipe_id')
+            ->with(['equipe', 'resultado'])
+            ->whereHas('resultado')
             ->get();
-
-        // Pontuação do evento: só considera equipe da INSCRIÇÃO (inscricao.equipe_id). Se não tiver na inscrição, não soma em nenhuma equipe.
-        $inscricoesComResultado = $inscricoes->whereNotNull('resultado');
-        $rankingEquipesEtapa = $inscricoesComResultado
-            ->filter(fn ($inscricao) => $inscricao->equipe_id !== null)
+        $rankingEquipesEtapa = $inscricoesParaRanking
             ->groupBy('equipe_id')
             ->map(function ($inscricoesDaEquipe) {
                 $equipe = $inscricoesDaEquipe->first()->equipe;
@@ -166,14 +164,37 @@ class PublicEventController extends Controller
             ->sortByDesc('pontos_totais')
             ->values();
 
-        $categoriasParaFiltro = $inscricoes->map(function ($inscricao) {
-            if ($inscricao->categoria && $inscricao->categoria->percurso) {
-                return $inscricao->categoria->percurso->descricao . ' | ' . $inscricao->categoria->nome . ' - ' . ucfirst($inscricao->categoria->genero);
-            }
-            return null;
-        })->filter()->unique()->sort()->values();
+        // Lista de categorias para o filtro.
+        $categoriasParaFiltro = \App\Models\Categoria::whereHas('inscricoes', function ($q) use ($evento) {
+            $q->where('evento_id', $evento->id)->where('status', 'confirmada');
+        })
+            ->with('percurso:id,descricao')
+            ->get()
+            ->map(function ($cat) {
+                if ($cat->percurso) {
+                    return $cat->percurso->descricao . ' | ' . $cat->nome . ' - ' . ucfirst($cat->genero ?? '');
+                }
+                return $cat->nome . ' - ' . ucfirst($cat->genero ?? '');
+            })
+            ->unique()
+            ->sort()
+            ->values();
 
-        return view('eventos.public.resultados', compact('evento', 'inscricoes', 'rankingEquipesEtapa', 'categoriasParaFiltro'));
+        // Lista de inscrições paginada (para a tabela de atletas/resultados).
+        $inscricoes = Inscricao::query()
+            ->where('inscricoes.evento_id', $evento->id)
+            ->where('inscricoes.status', 'confirmada')
+            ->with(['atleta.user', 'atleta.equipe', 'equipe', 'categoria.percurso', 'resultado'])
+            ->join('categorias', 'inscricoes.categoria_id', '=', 'categorias.id')
+            ->join('percursos', 'categorias.percurso_id', '=', 'percursos.id')
+            ->orderBy('percursos.id')
+            ->orderBy('categorias.id')
+            ->select('inscricoes.*')
+            ->paginate(80, ['*'], 'page');
+
+        $totalComResultado = \App\Models\Resultado::whereIn('inscricao_id', Inscricao::where('evento_id', $evento->id)->where('status', 'confirmada')->pluck('id'))->count();
+
+        return view('eventos.public.resultados', compact('evento', 'inscricoes', 'rankingEquipesEtapa', 'categoriasParaFiltro', 'totalComResultado'));
     }
 }
 

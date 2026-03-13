@@ -401,6 +401,28 @@
         </span>
     </a>
 
+    {{-- Banner de Cookies (LGPD) --}}
+    <div x-data="{ cookieAceito: localStorage.getItem('cookie_consent') === '1' }"
+         x-show="!cookieAceito"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-4"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         class="fixed bottom-0 left-0 right-0 z-[9998] bg-slate-800/95 backdrop-blur border-t border-slate-600 shadow-lg p-4 md:p-5"
+         style="display: none;">
+        <div class="container mx-auto max-w-6xl flex flex-col md:flex-row items-center justify-between gap-4">
+            <p class="text-sm text-gray-300 text-center md:text-left">
+                Utilizamos cookies para melhorar sua experiência e garantir o funcionamento do site, em conformidade com a LGPD.
+                <a href="{{ route('politica.privacidade') }}#cookies" class="text-orange-400 hover:text-orange-300 underline font-medium">Saiba mais</a>.
+            </p>
+            <div class="flex items-center gap-3 shrink-0">
+                <button @click="localStorage.setItem('cookie_consent', '1'); cookieAceito = true"
+                        class="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors text-sm">
+                    Aceitar
+                </button>
+            </div>
+        </div>
+    </div>
+
     {{-- Local para scripts específicos da página --}}
     @stack('scripts')
 

@@ -28,7 +28,7 @@
                     <div class="md:col-span-1 flex justify-center md:justify-end">
                         <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 md:p-4 flex items-center gap-x-4 md:gap-x-6 text-white text-center">
                             <div>
-                                <span class="text-2xl md:text-3xl font-bold">{{ count($inscricoes) }}</span>
+                                <span class="text-2xl md:text-3xl font-bold">{{ $inscricoes->total() }}</span>
                                 <p class="text-[10px] md:text-xs uppercase tracking-wider text-slate-300">Inscritos</p>
                             </div>
                             <div class="border-l border-white/20 h-8 md:h-10"></div>
@@ -51,7 +51,7 @@
             searchTeam: '',
             searchTeamTab: '', // Filtro exclusivo da aba de equipes
             selectedCategory: '',
-            inscricoes: {{ Js::from($inscricoes) }},
+            inscricoes: {{ Js::from($inscricoes->items()) }},
             storageUrl: '{{ asset('storage') }}',
             
             // Estado de visualização dos filtros (Responsivo)
@@ -311,6 +311,12 @@
                     <div x-show="filteredInscricoes.length === 0" class="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
                         <p>Nenhum atleta inscrito corresponde aos filtros selecionados.</p>
                     </div>
+
+                    @if($inscricoes->hasPages())
+                    <div class="mt-4 flex justify-center">
+                        {{ $inscricoes->withQueryString()->links() }}
+                    </div>
+                    @endif
                 </div>
 
                 {{-- CONTEÚDO DA ABA 2: RANKING DE EQUIPES --}}

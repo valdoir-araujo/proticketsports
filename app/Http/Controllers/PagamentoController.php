@@ -90,6 +90,7 @@ class PagamentoController extends Controller
                         'status' => 'confirmada',
                         'data_pagamento' => now(),
                         'metodo_pagamento' => 'cortesia_ou_100_off',
+                        'taxa_plataforma' => 0.00,
                         'transacao_id_gateway' => 'FREE-' . $inscricao->id . '-' . time()
                     ]);
                     if ($inscricao->cupom_id) {

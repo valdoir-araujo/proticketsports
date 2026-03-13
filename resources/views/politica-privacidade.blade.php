@@ -85,10 +85,20 @@
                     </p>
                 </section>
 
+                {{-- Cookies --}}
+                <section id="cookies">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                        <i class="fa-solid fa-cookie-bite text-orange-500 mr-2"></i> 6. Uso de cookies
+                    </h2>
+                    <p>
+                        O site utiliza cookies necessários ao funcionamento (sessão, segurança e preferências). Ao aceitar o aviso exibido na primeira visita, você concorda com o uso desses cookies. Não utilizamos cookies de rastreamento para publicidade de terceiros. Você pode configurar seu navegador para bloquear cookies, mas algumas funções do site podem deixar de operar corretamente.
+                    </p>
+                </section>
+
                 {{-- Segurança --}}
                 <section>
                     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                        <i class="fa-solid fa-lock text-orange-500 mr-2"></i> 6. Segurança
+                        <i class="fa-solid fa-lock text-orange-500 mr-2"></i> 7. Segurança
                     </h2>
                     <p>
                         Adotamos medidas técnicas robustas para proteger seus dados, incluindo criptografia SSL (Site Seguro), firewalls e acesso restrito aos bancos de dados. No entanto, nenhum sistema é 100% inviolável, e contamos com a colaboração dos usuários para manterem suas senhas seguras.
@@ -112,7 +122,7 @@
         </div>
 
         <div class="text-center mt-8">
-            <a href="/" class="text-indigo-600 hover:text-indigo-800 font-semibold flex justify-center items-center">
+            <a href="{{ url('/') }}" class="text-orange-600 hover:text-orange-800 font-semibold flex justify-center items-center">
                 <i class="fa-solid fa-arrow-left mr-2"></i> Voltar para a Página Inicial
             </a>
         </div>

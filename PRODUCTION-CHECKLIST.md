@@ -37,10 +37,25 @@ php artisan route:cache
 php artisan view:cache
 ```
 
-Se usar filas:
+**Filas (e-mails e jobs):** Para os e-mails de inscrição e outros jobs em fila funcionarem, um **worker precisa estar rodando** no servidor. Exemplo:
+
+```bash
+# Em produção, use um process manager (ex.: Supervisor) para manter o worker ativo
+php artisan queue:work --tries=3
+```
+
+Após cada deploy, reinicie o worker:
 
 ```bash
 php artisan queue:restart
+```
+
+**Modo manutenção (opcional durante o deploy):** Para evitar inscrições/pagamentos durante a atualização:
+
+```bash
+php artisan down --refresh=15
+# ... faça o deploy (git pull, composer, migrations, etc.) ...
+php artisan up
 ```
 
 Se não tiver link simbólico do storage:
@@ -74,6 +89,16 @@ php artisan storage:link
 | **DB_*** | Preencher no servidor com credenciais do banco real. |
 | **Cache** | Rodar `config:cache` e `route:cache` após alterar .env ou rotas. |
 | **Storage** | `php artisan storage:link` se as imagens/PDFs não aparecerem. |
+| **Filas** | Worker (`queue:work`) deve estar rodando para e-mails e jobs. |
+| **Backup** | Agendar backup do banco (ex.: diário via cron ou painel da hospedagem). |
+
+---
+
+## 7. Backup do banco de dados
+
+- [ ] Configurar **backup periódico** do MySQL (diário ou conforme necessidade).
+- [ ] Na Hostinger: usar o backup automático do painel ou um cron que rode `mysqldump` e envie o arquivo para um repositório seguro.
+- [ ] Testar restauração do backup em ambiente de teste pelo menos uma vez.
 
 ---
 

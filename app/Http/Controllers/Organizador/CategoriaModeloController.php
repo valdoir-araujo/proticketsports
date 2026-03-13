@@ -20,12 +20,13 @@ class CategoriaModeloController extends Controller
     /**
      * Exibe a lista de modelos de categoria.
      */
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
         $organizacao = $request->user()->organizacoes->first();
-        
-        // TODO: [SEGURANÇA] Reativar futuramente
-        // $this->authorize('view', $organizacao);
+        if (!$organizacao) {
+            return redirect()->route('organizador.organizacao.create')->with('warning', 'Você precisa de uma organização para acessar os modelos de categoria.');
+        }
+        $this->authorize('view', $organizacao);
 
         $percursoModelosComCategorias = $organizacao->percursoModelos()
             ->with(['categoriaModelos' => fn($query) => $query->orderBy('nome')])
@@ -43,11 +44,10 @@ class CategoriaModeloController extends Controller
     public function store(Request $request)
     {
         $organizacao = $request->user()->organizacoes->first();
-        
-        // =================================================================
-        // 🔴 COMENTADO PARA EVITAR ERRO 403
-        // =================================================================
-        // $this->authorize('update', $organizacao);
+        if (!$organizacao) {
+            return redirect()->route('organizador.organizacao.create')->with('warning', 'Você precisa de uma organização.');
+        }
+        $this->authorize('update', $organizacao);
 
         // 1. Validação
         $validated = $request->validate([
@@ -109,11 +109,12 @@ class CategoriaModeloController extends Controller
     public function update(Request $request, $id): RedirectResponse
     {
         $organizacao = $request->user()->organizacoes->first();
-        
-        // Busca direto pelo ID e organizacao_id, já que a coluna existe
-        $categoria = CategoriaModelo::where('organizacao_id', $organizacao->id)->findOrFail($id);
+        if (!$organizacao) {
+            return redirect()->route('organizador.organizacao.create')->with('warning', 'Você precisa de uma organização.');
+        }
+        $this->authorize('update', $organizacao);
 
-        // $this->authorize('update', $organizacao);
+        $categoria = CategoriaModelo::where('organizacao_id', $organizacao->id)->findOrFail($id);
 
         $validated = $request->validate([
             'percurso_modelo_id' => [
@@ -158,8 +159,10 @@ class CategoriaModeloController extends Controller
     public function destroy(Request $request, $id): RedirectResponse
     {
         $organizacao = $request->user()->organizacoes->first();
-        
-        // $this->authorize('delete', $organizacao);
+        if (!$organizacao) {
+            return redirect()->route('organizador.organizacao.create')->with('warning', 'Você precisa de uma organização.');
+        }
+        $this->authorize('delete', $organizacao);
 
         $categoria = CategoriaModelo::where('organizacao_id', $organizacao->id)->findOrFail($id);
         

@@ -31,7 +31,7 @@
                     <div class="md:col-span-1 flex justify-center md:justify-end">
                         <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 md:p-4 flex items-center gap-x-4 md:gap-x-6 text-white text-center">
                             <div>
-                                <span class="text-2xl md:text-3xl font-bold">{{ $inscricoes->whereNotNull('resultado')->count() }}</span>
+                                <span class="text-2xl md:text-3xl font-bold">{{ $totalComResultado ?? $inscricoes->total() }}</span>
                                 <p class="text-[10px] md:text-xs uppercase tracking-wider text-slate-300">Com resultado</p>
                             </div>
                             @if($evento->data_evento)
@@ -53,7 +53,7 @@
             searchTerm: '',
             selectedCategory: '',
             searchEquipeTab: '',
-            inscricoes: {{ Js::from($inscricoes) }},
+            inscricoes: {{ Js::from($inscricoes->items()) }},
             rankingEquipes: {{ Js::from($rankingEquipesEtapa->map(fn($r) => ['equipe_nome' => $r['equipe']->nome, 'pontos_totais' => $r['pontos_totais']])->values()) }},
             showFilters: window.innerWidth >= 768,
             isMobile: window.innerWidth < 768,
@@ -249,6 +249,11 @@
                         <div x-show="filteredInscricoes.length === 0" class="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
                             <p>Nenhum atleta corresponde aos filtros selecionados.</p>
                         </div>
+                        @if($inscricoes->hasPages())
+                        <div class="mt-4 flex justify-center">
+                            {{ $inscricoes->withQueryString()->links() }}
+                        </div>
+                        @endif
                     </div>
 
                     {{-- Conteúdo aba Equipes: total de pontos por equipe --}}

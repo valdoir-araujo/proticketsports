@@ -180,97 +180,62 @@
                 {{-- GRID DE EVENTOS --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @forelse ($eventosDestaque ?? [] as $evento)
-                        
-                        {{-- CARD MAIS ESCURO (bg-slate-50 e borda visível) --}}
-                        <div class="bg-slate-50 rounded-2xl shadow-md border border-gray-300 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col group">
-                            
-                            {{-- Imagem do Card --}}
-                            <a href="{{ route('eventos.public.show', $evento) }}" class="relative block overflow-hidden h-60">
-                                <div class="absolute inset-0 bg-slate-900/10 group-hover:bg-transparent transition-colors z-10"></div>
-                                <img class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" 
-                                     src="{{ $evento->thumbnail_url ? asset('storage/' . $evento->thumbnail_url) : 'https://via.placeholder.com/400x300?text=Evento' }}" 
-                                     alt="Imagem do evento {{ $evento->nome }}"
-                                     onerror="this.onerror=null; this.src='https://placehold.co/400x300/e2e8f0/64748b?text=Sem+Imagem'">
+                        <article class="bg-white rounded-2xl shadow-md border border-slate-200/80 overflow-hidden hover:shadow-xl hover:border-orange-200 transition-all duration-300 flex flex-col group h-full">
+                            <div class="h-1 bg-gradient-to-r from-orange-500 to-orange-400"></div>
+                            <a href="{{ route('eventos.public.show', $evento) }}" class="relative block overflow-hidden aspect-[16/10] bg-slate-100">
+                                <div class="absolute inset-0 bg-slate-900/5 group-hover:bg-transparent transition-colors z-10"></div>
+                                <img class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                                     src="{{ $evento->thumbnail_url ? asset('storage/' . $evento->thumbnail_url) : 'https://placehold.co/400x250/e2e8f0/64748b?text=Evento' }}"
+                                     alt="{{ $evento->nome }}"
+                                     onerror="this.onerror=null; this.src='https://placehold.co/400x250/e2e8f0/64748b?text=Sem+Imagem'">
                             </a>
-
-                            {{-- Corpo do Card --}}
-                            <div class="p-5 flex flex-col flex-grow">
-                                
-                                {{-- Título --}}
-                                <h3 class="text-lg font-bold text-slate-900 leading-tight mb-1 group-hover:text-orange-600 transition-colors">
-                                    <a href="{{ route('eventos.public.show', $evento) }}">
-                                        {{ $evento->nome }}
-                                    </a>
-                                </h3>
-
-                                {{-- Modalidade (Abaixo do título) --}}
+                            <div class="p-5 flex flex-col flex-grow min-h-0">
                                 @if($evento->modalidade)
-                                    <div class="mb-3">
-                                         <span class="inline-block bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide">
-                                            {{ $evento->modalidade->nome }}
-                                        </span>
-                                    </div>
+                                    <span class="inline-block self-start bg-orange-100 text-orange-700 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide mb-2">
+                                        {{ $evento->modalidade->nome }}
+                                    </span>
                                 @endif
-                                
-                                <div class="space-y-3 mb-4">
-                                    {{-- Local --}}
-                                    <div class="flex items-start text-sm text-gray-600">
-                                        <i class="fa-solid fa-location-dot mt-1 mr-2 text-orange-500 w-4 text-center"></i>
-                                        <div>
+                                <h3 class="text-lg font-bold text-slate-900 leading-snug mb-3 line-clamp-2 group-hover:text-orange-600 transition-colors">
+                                    <a href="{{ route('eventos.public.show', $evento) }}" class="block">{{ $evento->nome }}</a>
+                                </h3>
+                                <ul class="space-y-2.5 text-sm text-slate-600 mb-4 flex-grow">
+                                    <li class="flex items-start gap-2.5">
+                                        <i class="fa-solid fa-location-dot text-orange-500 mt-0.5 shrink-0 w-4 text-center"></i>
+                                        <span class="min-w-0">
                                             @if($evento->local)
-                                                <span class="font-bold text-gray-800 block leading-tight">{{ $evento->local }}</span>
+                                                <span class="font-semibold text-slate-800 block truncate">{{ $evento->local }}</span>
                                             @endif
-                                            
-                                            {{-- Cidade / UF com verificação segura --}}
-                                            <span class="text-xs text-gray-500">
-                                                {{ $evento->cidade->nome ?? ($evento->cidade ?? 'Cidade n/d') }} - {{ $evento->estado->uf ?? ($evento->estado->nome ?? ($evento->estado ?? 'UF')) }}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {{-- Data Completa --}}
-                                    <div class="flex items-center text-sm text-gray-600">
-                                         <i class="fa-regular fa-calendar mt-0.5 mr-2 text-blue-500 w-4 text-center"></i>
-                                         <span class="font-medium">
-                                            {{ \Carbon\Carbon::parse($evento->data_evento)->format('d/m/Y') }}
-                                            <span class="text-gray-300 mx-1">|</span> 
-                                            {{ \Carbon\Carbon::parse($evento->data_evento)->format('H:i') }}
-                                         </span>
-                                    </div>
-                                </div>
-
-                                {{-- STATUS DAS INSCRIÇÕES (LÓGICA ADICIONADA) --}}
-                                <div class="mt-auto pt-4 border-t border-gray-200 flex items-center justify-between">
+                                            <span class="text-slate-500">{{ $evento->cidade?->nome ?? '—' }} - {{ $evento->estado?->uf ?? '' }}</span>
+                                        </span>
+                                    </li>
+                                    <li class="flex items-center gap-2.5">
+                                        <i class="fa-regular fa-calendar text-blue-500 shrink-0 w-4 text-center"></i>
+                                        @if($evento->data_evento)
+                                            <span class="font-medium">{{ $evento->data_evento->format('d/m/Y') }} · {{ $evento->data_evento->format('H:i') }}</span>
+                                        @else
+                                            <span class="text-slate-400 italic">Data a definir</span>
+                                        @endif
+                                    </li>
+                                </ul>
+                                <div class="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
                                     @php
                                         $agora = now();
-                                        $inicio = \Carbon\Carbon::parse($evento->data_inicio_inscricoes);
-                                        $fim = \Carbon\Carbon::parse($evento->data_fim_inscricoes);
+                                        $inicio = $evento->data_inicio_inscricoes ? \Carbon\Carbon::parse($evento->data_inicio_inscricoes) : null;
+                                        $fim = $evento->data_fim_inscricoes ? \Carbon\Carbon::parse($evento->data_fim_inscricoes) : null;
                                     @endphp
-
-                                    @if($agora->lt($inicio))
-                                        {{-- Inscrições Em Breve --}}
-                                        <span class="text-xs font-bold text-yellow-600 uppercase flex items-center bg-yellow-100 px-2 py-1 rounded">
-                                            <i class="fa-regular fa-clock mr-1.5"></i> Inscrições Em Breve
-                                        </span>
-                                    @elseif($agora->gt($fim))
-                                        {{-- Inscrições Encerradas --}}
-                                        <span class="text-xs font-bold text-red-600 uppercase flex items-center bg-red-100 px-2 py-1 rounded">
-                                            <i class="fa-solid fa-lock mr-1.5"></i> Inscrições Encerradas
-                                        </span>
+                                    @if($inicio && $agora->lt($inicio))
+                                        <span class="text-xs font-bold text-amber-600 flex items-center gap-1.5"><i class="fa-regular fa-clock"></i> Em breve</span>
+                                    @elseif($fim && $agora->gt($fim))
+                                        <span class="text-xs font-bold text-red-600 flex items-center gap-1.5"><i class="fa-solid fa-lock"></i> Encerrado</span>
                                     @else
-                                        {{-- Inscrições Abertas --}}
-                                        <span class="text-xs font-bold text-green-700 uppercase flex items-center bg-green-100 px-2 py-1 rounded">
-                                            <i class="fa-solid fa-circle-check mr-1.5"></i> Inscrições Abertas
-                                        </span>
+                                        <span class="text-xs font-bold text-green-600 flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> Inscrições abertas</span>
                                     @endif
-
-                                    <a href="{{ route('eventos.public.show', $evento) }}" class="text-sm font-bold text-orange-600 hover:text-orange-800 transition-colors flex items-center group/link">
-                                        Detalhes <i class="fa-solid fa-arrow-right ml-1 transition-transform group-hover/link:translate-x-1"></i>
+                                    <a href="{{ route('eventos.public.show', $evento) }}" class="min-h-[44px] inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 transition-colors shadow-sm group/link shrink-0">
+                                        Ver evento <i class="fa-solid fa-arrow-right ml-1.5 text-xs transition-transform group-hover/link:translate-x-0.5"></i>
                                     </a>
-                                    
                                 </div>
                             </div>
-                        </div>
+                        </article>
                     @empty
                         <div class="col-span-full text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
                             <p class="text-gray-500 text-lg">Nenhum evento em destaque no momento.</p>

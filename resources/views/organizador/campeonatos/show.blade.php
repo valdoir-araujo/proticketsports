@@ -103,7 +103,56 @@
                     <p class="text-slate-500 mt-2 max-w-md mx-auto">Este campeonato ainda não possui etapas cadastradas. Clique no botão acima para adicionar a primeira etapa.</p>
                 </div>
             @else
-                <div class="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 min-w-0" style="-webkit-overflow-scrolling: touch;">
+                @php
+                    $statusClasses = [
+                        'publicado' => 'bg-green-100 text-green-700 border-green-200',
+                        'inscricoes_abertas' => 'bg-blue-100 text-blue-700 border-blue-200',
+                        'encerrado' => 'bg-slate-100 text-slate-600 border-slate-200',
+                        'concluido' => 'bg-slate-100 text-slate-600 border-slate-200',
+                        'rascunho' => 'bg-amber-100 text-amber-700 border-amber-200',
+                    ];
+                    $statusLabels = [
+                        'publicado' => 'Publicado',
+                        'inscricoes_abertas' => 'Inscrições Abertas',
+                        'encerrado' => 'Encerrado',
+                        'concluido' => 'Concluído',
+                        'rascunho' => 'Rascunho',
+                    ];
+                @endphp
+
+                {{-- Mobile: cards --}}
+                <div class="md:hidden p-4 space-y-3">
+                    @foreach($campeonato->eventos as $evento)
+                        @php
+                            $classe = $statusClasses[$evento->status] ?? 'bg-gray-100 text-gray-700 border-gray-200';
+                            $label = $statusLabels[$evento->status] ?? ucfirst(str_replace('_', ' ', $evento->status));
+                        @endphp
+                        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                            <div class="p-4">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <span class="flex-shrink-0 w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm border border-indigo-100">
+                                        {{ $loop->iteration }}
+                                    </span>
+                                    <h4 class="font-bold text-slate-800 leading-tight min-w-0">{{ $evento->nome }}</h4>
+                                </div>
+                                <div class="flex items-center gap-2 text-sm text-slate-500 ml-11">
+                                    <i class="fa-regular fa-calendar text-slate-400"></i>
+                                    {{ $evento->data_evento->format('d/m/Y') }}
+                                </div>
+                                <div class="mt-2 ml-11">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border {{ $classe }}">{{ $label }}</span>
+                                </div>
+                                <a href="{{ route('organizador.eventos.show', $evento) }}" class="mt-4 flex items-center justify-center w-full min-h-[44px] px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-bold shadow-sm">
+                                    Gerenciar
+                                    <i class="fa-solid fa-chevron-right ml-1.5 text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- Desktop: tabela --}}
+                <div class="hidden md:block overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 min-w-0" style="-webkit-overflow-scrolling: touch;">
                     <table class="w-full text-left border-collapse min-w-[600px]">
                         <thead>
                             <tr class="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider font-bold border-b-2 border-slate-200">
@@ -115,6 +164,10 @@
                         </thead>
                         <tbody class="divide-y divide-slate-200">
                             @foreach($campeonato->eventos as $evento)
+                                @php
+                                    $classe = $statusClasses[$evento->status] ?? 'bg-gray-100 text-gray-700 border-gray-200';
+                                    $label = $statusLabels[$evento->status] ?? ucfirst(str_replace('_', ' ', $evento->status));
+                                @endphp
                                 <tr class="transition-colors group even:bg-slate-50/80 hover:bg-indigo-50/50">
                                     <td class="px-6 py-4">
                                         <div class="flex items-center">
@@ -131,25 +184,6 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
-                                        @php
-                                            $statusClasses = [
-                                                'publicado' => 'bg-green-100 text-green-700 border-green-200',
-                                                'inscricoes_abertas' => 'bg-blue-100 text-blue-700 border-blue-200',
-                                                'encerrado' => 'bg-slate-100 text-slate-600 border-slate-200',
-                                                'concluido' => 'bg-slate-100 text-slate-600 border-slate-200',
-                                                'rascunho' => 'bg-amber-100 text-amber-700 border-amber-200',
-                                            ];
-                                            $statusLabels = [
-                                                'publicado' => 'Publicado',
-                                                'inscricoes_abertas' => 'Inscrições Abertas',
-                                                'encerrado' => 'Encerrado',
-                                                'concluido' => 'Concluído',
-                                                'rascunho' => 'Rascunho',
-                                            ];
-                                            $classe = $statusClasses[$evento->status] ?? 'bg-gray-100 text-gray-700 border-gray-200';
-                                            $label = $statusLabels[$evento->status] ?? ucfirst(str_replace('_', ' ', $evento->status));
-                                        @endphp
-                                        
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border {{ $classe }}">
                                             <span class="w-1.5 h-1.5 rounded-full mr-1.5 {{ str_replace(['bg-100', 'text-700', 'border-200'], ['bg-500', '', ''], $classe) }} opacity-70"></span>
                                             {{ $label }}
